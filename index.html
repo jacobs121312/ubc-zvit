@@ -2,12 +2,19 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-KAhcQ60BFXwTUXHXQPkERhdONcrSbtDHZxbNkw9Izfk=' 'sha256-D8Vboukt9brer1/n5In/99ZNB+ByAhODMpd8fv4thbU='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-blIMWsmxmCXCUUKdR5m4QRQt3p0J5e1B+0N4jdJLCKk='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex">
   <meta name="referrer" content="strict-origin">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Звіт УБЦ">
+  <meta name="theme-color" content="#f6f6f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -437,6 +444,51 @@
       #viewStats.anim .fill, #viewStats.anim .chart .bar, #viewStats.anim .chart text.val,
       #viewStats.anim .op, #viewStats.anim .over-tag { animation: none; }
     }
+
+    /* ---------- Валюта, розподіл на категорії, перевищення ---------- */
+    .amt { display: flex; gap: 6px; }
+    .amt input { flex: 1; min-width: 0; }
+    .amt select { width: 78px; flex: none; }
+    .rateHint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .rateHint:empty { display: none; }
+    .is-split .category, .is-split .left { display: none; }
+    .split-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+    .split-row select { flex: 1.7; min-width: 0; }
+    .split-row input { flex: 1; min-width: 0; }
+    .split-row .x2 { width: 40px; flex: none; padding: 0; height: 42px; background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 10px; box-shadow: none; }
+    .split-sum { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .split-sum.bad { color: var(--err); }
+    .splitTools { display: flex; gap: 12px; flex-wrap: wrap; }
+    .splitTools .linkbtn { margin: 8px 0 0; padding: 4px 0; font-size: 13px; }
+    .is-advance .splitTools, .is-advance .splitBox { display: none; }
+    .over-warn { font-size: 13px; color: var(--err); background: var(--err-bg); padding: 8px 11px; border-radius: 10px; margin-top: 12px; }
+
+    /* ---------- Історія операцій ---------- */
+    .hist-tools { display: grid; gap: 8px; margin-bottom: 6px; }
+    .hist-tools .row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .hist-tools select, .hist-tools input { font-size: 14px; padding-top: 9px; padding-bottom: 9px; }
+    .hist-sum { font-size: 12px; color: var(--muted); margin: 2px 0 4px; font-variant-numeric: tabular-nums; }
+    .st { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; margin-left: 4px;
+      background: var(--surface-2); color: var(--muted); vertical-align: 1px; }
+    .st.checked { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+    .st.reimbursed { background: var(--ok-bg); color: var(--ok); }
+    .st.over { background: var(--err-bg); color: var(--err); }
+    .op-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .op.editing { flex-wrap: wrap; }
+    .op-edit { flex-basis: 100%; padding: 6px 0 4px; }
+    .head-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .sec-head:has(.head-btns) { flex-wrap: wrap; align-items: center; }
+    @media (max-width: 520px) { .hist-tools .row3 { grid-template-columns: 1fr 1fr; } .hist-tools .row3 select:last-child { grid-column: 1 / -1; } }
+
+    @media print {
+      body { background: #fff !important; color: #000; }
+      .tabbar, .dock, .sub-side, #ministryBlock, .logout, .refresh, .head-btns, .hist-tools, .op-actions, .chk,
+      .invite-bar, .adm-tools, .adm-head, .links, #histMore, .people, .chart { display: none !important; }
+      .card, .kpi { box-shadow: none !important; border-color: #ccc !important; break-inside: avoid; }
+      .op { break-inside: avoid; }
+      .op-title, .op-sub { white-space: normal; }
+    }
   </style>
 </head>
 <body>
@@ -517,8 +569,23 @@
     </section>
 
     <section class="card">
-      <div class="sec-head"><h2>Останні операції</h2><button type="button" class="refresh" id="refresh">Оновити</button></div>
+      <div class="sec-head"><h2>Операції за рік</h2>
+        <div class="head-btns">
+          <button type="button" class="refresh" id="csvBtn" title="Завантажити для Excel">CSV</button>
+          <button type="button" class="refresh" id="printBtn" title="Друк або збереження в PDF">Друк / PDF</button>
+          <button type="button" class="refresh" id="refresh">Оновити</button>
+        </div></div>
+      <div class="hist-tools">
+        <input type="search" id="histQ" placeholder="Пошук: опис, постачальник, категорія" aria-label="Пошук операцій">
+        <div class="row3">
+          <select id="histMonth" aria-label="Місяць"></select>
+          <select id="histStatus" aria-label="Статус"></select>
+          <select id="histCat" aria-label="Категорія"></select>
+        </div>
+      </div>
+      <div class="hist-sum" id="histSum"></div>
       <div class="ops" id="ops"></div>
+      <button type="button" class="linkbtn hidden" id="histMore">Показати ще</button>
     </section>
   </div>
   <div id="viewAdmin" class="hidden">
@@ -529,7 +596,8 @@
         <button type="button" id="inviteAll" style="width:auto;padding:10px 16px">Надіслати запрошення</button>
       </div>
       <div class="adm-tools">
-        <input type="search" id="admSearch" placeholder="Пошук: служіння або відповідальний">
+        <div style="display:flex;gap:8px"><input type="search" id="admSearch" placeholder="Пошук: служіння або відповідальний" style="flex:1">
+          <button type="button" class="refresh" id="admListCsv" title="Зведення по всіх служіннях для Excel">CSV</button></div>
         <div class="ministries" id="admFilters"></div>
       </div>
       <div id="admMinistries"></div>
@@ -593,15 +661,32 @@
         </div>
       </div>
       <div>
-        <label>Сума, ₴</label>
-        <input type="number" class="amount" inputmode="decimal" step="0.01" min="0.01" placeholder="0">
+        <label>Сума</label>
+        <div class="amt">
+          <input type="number" class="amount" inputmode="decimal" step="0.01" min="0.01" placeholder="0">
+          <select class="currency" aria-label="Валюта"><option value="UAH">₴</option></select>
+        </div>
       </div>
     </div>
+    <div class="rateHint"></div>
 
     <div class="expOnly">
       <label>Категорія</label>
       <select class="category"></select>
       <div class="left"></div>
+      <div class="splitBox">
+        <div class="splitRows"></div>
+        <div class="split-sum splitSum"></div>
+      </div>
+      <div class="splitTools">
+        <button type="button" class="linkbtn splitBtn">Розділити на кілька категорій</button>
+        <button type="button" class="linkbtn addSplit hidden">+ ще категорія</button>
+      </div>
+      <div class="overBlock hidden">
+        <div class="over-warn"></div>
+        <label>Чому перевищено бюджет <span class="hint">· обов'язково</span></label>
+        <textarea class="overReason" placeholder="Напр.: погоджено з пастором, ремонт не можна було відкласти"></textarea>
+      </div>
 
       <label>Що це і для чого</label>
       <textarea class="description" placeholder="Батарейки для мікрофонів на недільне служіння"></textarea>
@@ -761,6 +846,9 @@
     location.reload();
   };
   setSignedIn(authValid());
+
+  // Застосунок на головному екрані (PWA): службовий воркер кешує лише саму сторінку, не дані.
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 
 <script>
@@ -769,6 +857,10 @@
   const newOpId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12));
   let categories = [];
   let limits = { min: '', max: '' };
+  let ME = '', currencies = ['UAH'];
+  const CUR_SIGN = { UAH: '₴', USD: '$', EUR: '€' };
+  const parseNum = v => parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')) || 0;
+  const num = n => (Math.round(n * 100) / 100).toLocaleString('uk-UA');
   const cards = []; // { el, files: [{name, mimeType, base64, preview}] }
   let busy = false;
 
@@ -791,6 +883,7 @@
   api.run
     .withSuccessHandler(data => {
       limits = { min: data.minDate, max: data.maxDate };
+      ME = data.email; currencies = data.currencies || ['UAH'];
       try { setOrder(data.order); } catch (e) { console.error(e); } // картка «Замовлення коштів» не має ламати форму
       for (const m of data.ministries) {
         const o = document.createElement('option'); o.value = m.id; o.textContent = m.name;
@@ -847,6 +940,7 @@
         sync();
         $('balance').classList.add('hidden');
         $('ministry').dispatchEvent(new Event('change'));
+        saveDraftSoon();
       };
       $('ministryPills').appendChild(b);
       sync();
@@ -874,18 +968,23 @@
         }
         renderDashboard(data);
         updateSubmit();
+        checkOver();
+        if (!draftChecked) { draftChecked = true; restoreDraft(); }
   }
 
   function fillCategories(card) {
-    const sel = card.el.querySelector('.category');
-    const keep = sel.value;
-    sel.innerHTML = '<option value="">Оберіть категорію</option>';
-    for (const c of categories) {
-      const o = document.createElement('option'); o.value = c.name; o.textContent = c.name.trim();
-      sel.appendChild(o);
-    }
-    if (categories.some(c => c.name === keep)) sel.value = keep;
+    fillSelect(card.el.querySelector('.category'));
+    card.el.querySelectorAll('.splitCat').forEach(s => fillSelect(s));
     showLeft(card);
+  }
+
+  /** Список категорій бюджету в <select>; keep — що лишити обраним. */
+  function fillSelect(sel, keep) {
+    keep = keep === undefined ? sel.value : keep;
+    sel.innerHTML = '<option value="">Оберіть категорію</option>' +
+      categories.map(c => `<option value="${esc(c.name)}">${esc(c.name.trim())}</option>`).join('');
+    const hit = categories.find(c => c.name === keep) || categories.find(c => c.name.trim() === String(keep || '').trim());
+    if (hit) sel.value = hit.name;
   }
 
   function showLeft(card) {
@@ -953,20 +1052,147 @@
 
     renderMonthChart(d.months || []);
 
-    const ops = d.recent || [];
-    const icoExp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
-    const icoInc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
-    $('ops').innerHTML = ops.length ? ops.map((o, oi) => {
-      const inc = o.income > 0 && !o.expense;
+    hist.ops = d.ops || [];
+    fillHistFilters(d);
+    renderHistory();
+    animateStats();
+  }
+
+  // ---------- історія операцій (F5), редагування (F2), експорт (F7) ----------
+  const ST = { submitted: 'Подано', checked: 'Перевірено', reimbursed: 'Відшкодовано' };
+  const hist = { ops: [], q: '', month: '', status: '', cat: '', limit: 50 };
+  const ICO_EXP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+  const ICO_INC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+  const isAdv = o => o.income > 0 && !o.expense;
+
+  function fillHistFilters(d) {
+    const opt = (v, t, cur) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(t)}</option>`;
+    const months = (d.months || []).filter(m => hist.ops.some(o => o.month === m.name)).map(m => m.name);
+    if (!months.includes(hist.month)) hist.month = '';
+    $('histMonth').innerHTML = opt('', 'Місяць: усі', hist.month) + months.map(m => opt(m, m, hist.month)).join('');
+    $('histStatus').innerHTML = opt('', 'Статус: усі', hist.status) +
+      [['submitted', 'Подано'], ['checked', 'Перевірено'], ['reimbursed', 'Відшкодовано'], ['over', 'Перевищення']].map(([v, t]) => opt(v, t, hist.status)).join('');
+    const cats = [...new Set(hist.ops.map(o => o.category).filter(Boolean))].sort();
+    if (!cats.includes(hist.cat)) hist.cat = '';
+    $('histCat').innerHTML = opt('', 'Категорія: усі', hist.cat) + cats.map(c => opt(c, c.replace(/^\d+\s*/, ''), hist.cat)).join('');
+  }
+
+  function histFiltered() {
+    return hist.ops.filter(o => (!hist.month || o.month === hist.month)
+      && (!hist.status || (hist.status === 'over' ? o.over : o.status === hist.status))
+      && (!hist.cat || o.category === hist.cat)
+      && (!hist.q || [o.description, o.vendor, o.category, o.noReceiptReason].join(' ').toLowerCase().includes(hist.q)));
+  }
+
+  function renderHistory() {
+    const list = histFiltered();
+    const exp = list.reduce((a, o) => a + o.expense, 0), inc = list.reduce((a, o) => a + o.income, 0);
+    $('histSum').textContent = list.length
+      ? `${list.length} операцій · витрати ${uah(exp)}${inc ? ` · аванси ${uah(inc)}` : ''}` : '';
+    const shown = list.slice(0, hist.limit);
+    $('ops').innerHTML = shown.length ? shown.map((o, oi) => {
+      const inc = isAdv(o);
       const title = inc ? (o.description || 'Аванс') : (o.description || o.category || 'Витрата');
       const sub = [dmy(o.date), inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ');
       const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>` : '';
-      return `<div class="op" style="--i:${Math.min(oi, 10)}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? icoInc : icoExp}</div>
-        <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div></div>
+      const st = `<span class="st ${o.status}">${ST[o.status]}</span>${o.over ? '<span class="st over">перевищення</span>' : ''}`;
+      const acts = o.editable ? `<div class="op-actions"><button type="button" class="chk" data-act="edit" data-id="${esc(o.id)}">Змінити</button>
+        <button type="button" class="chk" data-act="cancel" data-id="${esc(o.id)}">Скасувати запис</button></div>` : '';
+      return `<div class="op" data-id="${esc(o.id)}" style="--i:${Math.min(oi, 10)}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? ICO_INC : ICO_EXP}</div>
+        <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div><div>${st}</div>${acts}</div>
         <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
-    }).join('') : '<div class="empty">Цього року ще немає операцій</div>';
-    animateStats();
+    }).join('') : `<div class="empty">${hist.ops.length ? 'Нічого не знайдено' : 'Цього року ще немає операцій'}</div>`;
+    $('histMore').classList.toggle('hidden', list.length <= hist.limit);
+    $('histMore').textContent = `Показати ще (${list.length - shown.length})`;
   }
+
+  $('histQ').oninput = () => { hist.q = $('histQ').value.trim().toLowerCase(); hist.limit = 50; renderHistory(); };
+  [['histMonth', 'month'], ['histStatus', 'status'], ['histCat', 'cat']].forEach(([id, k]) => {
+    $(id).onchange = () => { hist[k] = $(id).value; hist.limit = 50; renderHistory(); };
+  });
+  $('histMore').onclick = () => { hist.limit += 50; renderHistory(); };
+  $('ops').onclick = ev => {
+    const b = ev.target.closest('button[data-act]'); if (!b) return;
+    const o = hist.ops.find(x => x.id === b.dataset.id); if (!o) return;
+    if (b.dataset.act === 'edit') openEdit(o, b.closest('.op'));
+    else cancelOp(o, b);
+  };
+
+  function cancelOp(o, b) {
+    const what = `${isAdv(o) ? 'аванс' : '«' + (o.description || o.category) + '»'} на ${uah(isAdv(o) ? o.income : o.expense)} від ${dmy(o.date)}`;
+    if (!confirm(`Скасувати запис: ${what}?\n\nРядок буде видалено зі звіту, фото чека — у кошик Google Диска.`)) return;
+    b.disabled = true; b.textContent = 'Скасовую…';
+    call('cancelOperation', $('ministry').value, o.id)
+      .then(() => { showMsg($('msg'), 'ok', `Запис скасовано: ${esc(what)}.`); refreshInfo(); })
+      .catch(e => { b.disabled = false; b.textContent = 'Скасувати запис'; alert(errText(e)); });
+  }
+
+  /** Редагування свого запису прямо в списку. */
+  function openEdit(o, el) {
+    if (el.querySelector('.op-edit')) return;
+    const adv = isAdv(o);
+    el.classList.add('editing');
+    const f = document.createElement('div');
+    f.className = 'op-edit';
+    f.innerHTML = `
+      <div class="row"><div><label>Дата</label><input type="text" class="eDate" inputmode="numeric" maxlength="10" value="${esc(dmy(o.date))}"></div>
+        <div><label>Сума, ₴</label><input type="number" class="eAmt" inputmode="decimal" step="0.01" min="0.01" value="${adv ? o.income : o.expense}"></div></div>
+      ${adv ? `<label>Коментар</label><textarea class="eDesc">${esc(o.description.replace(/^Аванс:?\s*/, ''))}</textarea>` : `
+        <label>Категорія</label><select class="eCat"></select>
+        <label>Що це і для чого</label><textarea class="eDesc">${esc(o.description)}</textarea>
+        <label>Постачальник</label><input type="text" class="eVendor" value="${esc(o.vendor)}">
+        ${o.receipt ? '' : `<label>Чому немає чека</label><textarea class="eReason">${esc(o.noReceiptReason)}</textarea>`}`}
+      <div class="eOver hidden"><label>Чому перевищено бюджет <span class="hint">· обов'язково</span></label><textarea class="eOverReason"></textarea></div>
+      <div class="msg eMsg"></div>
+      <div class="op-actions" style="margin-top:10px"><button type="button" class="chk on eSave">Зберегти</button><button type="button" class="chk eClose">Не змінювати</button></div>`;
+    el.appendChild(f);
+    const q = s => f.querySelector(s);
+    if (!adv) fillSelect(q('.eCat'), o.category);
+    q('.eClose').onclick = () => { f.remove(); el.classList.remove('editing'); };
+    q('.eSave').onclick = () => {
+      const iso = parseUa(q('.eDate').value);
+      if (!iso) { showMsg(q('.eMsg'), 'err', 'Дата має бути у форматі дд.мм.рррр.'); return; }
+      const ch = { date: iso, amount: q('.eAmt').value, description: q('.eDesc').value };
+      if (!adv) {
+        ch.category = q('.eCat').value; ch.vendor = q('.eVendor').value;
+        if (q('.eReason')) ch.noReceiptReason = q('.eReason').value;
+      }
+      if (!q('.eOver').classList.contains('hidden')) ch.overReason = q('.eOverReason').value;
+      const b = q('.eSave'); b.disabled = true; b.textContent = 'Зберігаю…';
+      call('editOperation', $('ministry').value, o.id, ch).then(() => {
+        showMsg($('msg'), 'ok', 'Зміни збережено у звіті.'); refreshInfo();
+      }).catch(e => {
+        b.disabled = false; b.textContent = 'Зберегти';
+        if (/перевищ/i.test(errText(e))) q('.eOver').classList.remove('hidden');
+        showMsg(q('.eMsg'), 'err', errText(e));
+      });
+    };
+  }
+
+  // CSV для Excel (роздільник «;», кома в сумах) і друк / PDF.
+  function downloadCsv(name, header, rows) {
+    const cell = v => {
+      let s = String(v == null ? '' : v);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // щоб Excel не виконав текст як формулу
+      return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const text = '﻿' + [header].concat(rows).map(r => r.map(cell).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+    a.download = name.replace(/[\\/:*?"<>|]/g, ' ');
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  const amtCsv = n => String(Math.round(n * 100) / 100).replace('.', ',');
+  const OPS_HEAD = ['Дата', 'Місяць', 'Тип', 'Сума, грн', 'Категорія', 'Опис', 'Постачальник', 'Чек', 'Причина без чека', 'Статус', 'Перевищення', 'Подав(ла)'];
+  const opsRows = ops => ops.map(o => [dmy(o.date), o.month, isAdv(o) ? 'Аванс' : 'Витрата', amtCsv(isAdv(o) ? o.income : o.expense),
+    o.category, o.description, o.vendor, o.receipt || (isAdv(o) ? '' : 'немає'), o.noReceiptReason, ST[o.status], o.over ? 'так' : '', o.by]);
+  const today = () => new Date().toLocaleDateString('uk-UA');
+  const ministryName = () => { const o = $('ministry').selectedOptions[0]; return o ? o.textContent : ''; };
+
+  $('csvBtn').onclick = () => downloadCsv(`Операції ${ministryName()} ${today()}.csv`, OPS_HEAD, opsRows(histFiltered()));
+  $('printBtn').onclick = () => { hist.limit = Infinity; renderHistory(); window.print(); };
+  window.addEventListener('afterprint', () => { if (hist.limit === Infinity) { hist.limit = 50; renderHistory(); } });
 
   // Перезапуск анімацій аналітики (при відкритті вкладки й після оновлення даних).
   const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1166,6 +1392,16 @@
       $('admFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
       renderAdmList();
     };
+    $('admListCsv').onclick = () => downloadCsv(`Зведення служінь ${today()}.csv`,
+      ['Служіння', 'Відповідальний', 'Бюджет, грн', 'Витрачено, грн', 'Залишок, грн', 'На руках / до відшкодування, грн', 'Операцій',
+        'Без чека', 'Неперевірені', 'Не відшкодовані', 'Перевищено категорій', 'Стан'],
+      adm.list.map(m => {
+        const s = adm.sum[m.id] || {}, ok = s.status === 'ok';
+        return [m.name, m.responsible, ok ? amtCsv(s.plan) : '', ok ? amtCsv(s.spent) : '', ok ? amtCsv(s.plan - s.spent) : '',
+          ok && s.balance ? amtCsv(s.balance.amount) : '', ok ? s.count : '', ok ? s.noReceipt : '', ok ? s.unchecked : '',
+          ok ? s.unreimbursed : '', ok ? s.over : '',
+          ok ? 'звіт є' : s.status === 'no-report' ? 'звіт не створено' : s.status === 'no-access' ? 'немає доступу' : s.status ? 'помилка' : 'не завантажено'];
+      }));
     $('admSearch').oninput = () => { adm.q = $('admSearch').value.trim().toLowerCase(); renderAdmList(); };
     $('admMinistries').innerHTML = '<div class="empty">Завантаження служінь…</div>';
     wireInviteAll();
@@ -1223,6 +1459,7 @@
             ${s.noReceipt ? `<span class="badge warn">без чека: ${s.noReceipt}</span>` : ''}
             ${s.unchecked ? `<span class="badge">неперевірено: ${s.unchecked}</span>` : (s.count ? '<span class="badge ok">усе перевірено</span>' : '')}
             ${s.over ? `<span class="badge warn">▲ перевищено категорій: ${s.over}</span>` : ''}
+            ${s.unreimbursed ? `<span class="badge">не відшкодовано: ${s.unreimbursed}</span>` : ''}
             ${s.count ? `<span class="badge">операцій: ${s.count}</span>` : '<span class="badge">операцій ще немає</span>'}
           </div>`;
       }
@@ -1245,7 +1482,7 @@
     call('adminMinistryDetail', id).then(d => {
       if (adm.detail !== id) return;
       adm.d = d; renderAdmDetail();
-      if (d.status !== 'no-report') adm.sum[id] = Object.assign({}, adm.sum[id], { status: 'ok', count: d.count, noReceipt: d.noReceipt, unchecked: d.unchecked });
+      if (d.status !== 'no-report') adm.sum[id] = Object.assign({}, adm.sum[id], { status: 'ok', count: d.count, noReceipt: d.noReceipt, unchecked: d.unchecked, unreimbursed: d.unreimbursed });
     }).catch(e => {
       $('admDetail').querySelector('.card').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`;
     });
@@ -1297,13 +1534,16 @@
         <div class="track"><div class="fill" style="width:${Math.min(100, p).toFixed(1)}%"></div></div>
         ${over ? `<div class="over-tag">▲ перевищено на ${uah(c.spent - c.plan)}</div>` : ''}</div>`;
     }).join('') || '<div class="empty">Немає категорій</div>';
-    const F = [['all', 'Усі'], ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['checked', 'Перевірені']];
+    const F = [['all', 'Усі'], ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['unreimbursed', 'Не відшкодовані'],
+      ['over', 'Перевищення'], ['checked', 'Перевірені']];
     $('admDetail').innerHTML = `<div class="adm-head"><button type="button" class="back" id="admBack">← Усі служіння</button></div>
       <h2 style="font-size:22px;margin:0 0 2px;letter-spacing:-0.02em">${esc(d.name)}</h2>
       <div class="rp" style="color:var(--muted);font-size:13px;margin-bottom:10px">${esc(d.responsible || '')}${d.emails ? ' · ' + esc(d.emails) : ''}</div>
       <div class="links">
         <a href="${esc(safeUrl(d.reportUrl))}" target="_blank" rel="noopener">Відкрити звіт ↗</a>
         <a href="${esc(safeUrl(d.receiptsUrl))}" target="_blank" rel="noopener">Папка чеків ↗</a>
+        <button type="button" class="refresh" id="admCsv">CSV</button>
+        <button type="button" class="refresh" id="admPrint">Друк / PDF</button>
       </div>
       <div class="kpis">${kpis}</div>
       <section class="card"><div class="sec-head"><h2>По категоріях</h2><span class="hint">витрачено / бюджет</span></div>${cats}</section>
@@ -1313,6 +1553,8 @@
         <div id="admOps"></div>
       </section>`;
     $('admBack').onclick = closeAdmDetail;
+    $('admCsv').onclick = () => downloadCsv(`Операції ${d.name} ${today()}.csv`, OPS_HEAD, opsRows(d.ops));
+    $('admPrint').onclick = () => { adm.opsFilter = 'all'; renderAdmOps(); window.print(); };
     $('admDetail').insertAdjacentHTML('beforeend', peopleHtml(adm.list.find(x => x.id === d.id)));
     wirePeople(adm.list.find(x => x.id === d.id), renderAdmDetail);
     $('opsFilters').onclick = ev => {
@@ -1328,46 +1570,70 @@
     const d = adm.d;
     const ops = d.ops.filter(o => {
       const nr = o.expense > 0 && !o.receipt;
-      return adm.opsFilter === 'noReceipt' ? nr : adm.opsFilter === 'unchecked' ? !o.checked : adm.opsFilter === 'checked' ? !!o.checked : true;
+      switch (adm.opsFilter) {
+        case 'noReceipt': return nr;
+        case 'unchecked': return !o.checked;
+        case 'checked': return !!o.checked;
+        case 'unreimbursed': return o.expense > 0 && !o.reimbursed;
+        case 'over': return o.over;
+        default: return true;
+      }
     });
-    const icoExp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
-    const icoInc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
-    $('admOps').innerHTML = ops.length ? ops.map((o, i) => {
-      const inc = o.income > 0 && !o.expense, nr = o.expense > 0 && !o.receipt;
+    $('admOps').innerHTML = ops.length ? ops.map(o => {
+      const inc = isAdv(o), nr = o.expense > 0 && !o.receipt;
       const title = inc ? (o.description || 'Аванс') : (o.description || o.category || 'Витрата');
-      const sub = [o.date ? dmy(o.date) : '', inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ')
+      const sub = [o.date ? dmy(o.date) : '', inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor, o.by].filter(Boolean).map(esc).join(' · ')
         + (nr ? ` · <b>без чека${o.noReceiptReason ? ': ' + esc(o.noReceiptReason) : ''}</b>` : '');
       const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>` : '';
-      const idx = d.ops.indexOf(o);
-      return `<div class="op${nr ? ' nr' : ''}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? icoInc : icoExp}</div>
+      const idx = d.ops.indexOf(o), dis = o.id ? '' : ' disabled title="Оновіть сторінку"';
+      return `<div class="op${nr ? ' nr' : ''}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? ICO_INC : ICO_EXP}</div>
         <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div>
-          <button type="button" class="chk${o.checked ? ' on' : ''}" data-i="${idx}" title="${esc(o.checked)}">${o.checked ? '✓ Перевірено' : 'Позначити перевіреним'}</button></div>
+          ${o.over ? '<div><span class="st over">перевищення бюджету</span></div>' : ''}
+          <div class="op-actions">
+            <button type="button" class="chk${o.checked ? ' on' : ''}" data-k="checked" data-i="${idx}"${dis} title="${esc(o.checked)}">${o.checked ? '✓ Перевірено' : 'Позначити перевіреним'}</button>
+            ${inc ? '' : `<button type="button" class="chk${o.reimbursed ? ' on' : ''}" data-k="reimbursed" data-i="${idx}"${dis} title="${esc(o.reimbursed)}">${o.reimbursed ? '₴ Відшкодовано' : 'Позначити відшкодованим'}</button>`}
+          </div></div>
         <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
     }).join('') : '<div class="empty">Немає операцій</div>';
-    $('admOps').querySelectorAll('.chk').forEach(b => b.onclick = () => {
-      const o = d.ops[+b.dataset.i], want = !o.checked;
+    $('admOps').querySelectorAll('.chk[data-k]').forEach(b => b.onclick = () => {
+      const o = d.ops[+b.dataset.i], k = b.dataset.k, want = !o[k];
       b.disabled = true; b.textContent = 'Зберігаю…';
-      call('adminSetChecked', d.id, o.month, o.row, want, { income: o.income, expense: o.expense, description: o.description }).then(r => {
-        o.checked = r.checked;
+      call('adminSetStatus', d.id, o.id, k, want).then(r => {
+        o.checked = r.checked; o.reimbursed = r.reimbursed;
+        o.status = o.reimbursed ? 'reimbursed' : o.checked ? 'checked' : 'submitted';
         d.unchecked = d.ops.filter(x => !x.checked).length;
-        if (adm.sum[d.id]) adm.sum[d.id].unchecked = d.unchecked;
+        d.unreimbursed = d.ops.filter(x => x.expense > 0 && !x.reimbursed).length;
+        if (adm.sum[d.id]) Object.assign(adm.sum[d.id], { unchecked: d.unchecked, unreimbursed: d.unreimbursed });
         renderAdmOps();
       }).catch(e => { b.disabled = false; b.textContent = 'Помилка — ще раз'; b.title = errText(e); });
     });
   }
 
   // ---------- cards ----------
-  function addCard(files, advance) {
+  function addCard(files, advance, opId) {
     const el = $('cardTpl').content.firstElementChild.cloneNode(true);
-    const card = { el, files: [], advance: false, opId: newOpId() };
+    const card = { el, files: [], advance: false, opId: opId || newOpId(), split: false, rate: 1, over: false };
     const prev = cards[cards.length - 1];
     el.querySelector('.date').min = limits.min;
     el.querySelector('.date').max = limits.max;
     setupDate(el, prev ? prev.el.querySelector('.date').value : todayIso());
 
     el.querySelector('.remove').onclick = () => {
-      cards.splice(cards.indexOf(card), 1); el.remove(); renumber();
+      cards.splice(cards.indexOf(card), 1); el.remove(); renumber(); checkOver(); saveDraftSoon();
     };
+    const cur = el.querySelector('.currency');
+    cur.innerHTML = currencies.map(c => `<option value="${esc(c)}">${CUR_SIGN[c] || esc(c)}</option>`).join('');
+    cur.classList.toggle('hidden', currencies.length < 2);
+    el.querySelector('.splitBtn').onclick = () => toggleSplit(card, !card.split);
+    el.querySelector('.addSplit').onclick = () => { addSplit(card); saveDraftSoon(); };
+    const onEdit = ev => {
+      const t = ev.target;
+      if (t.matches('.amount, .dateText, .date, .currency')) updateRate(card);
+      if (t.matches('.amount, .splitAmt')) updateSplitSum(card);
+      checkOver(); saveDraftSoon();
+    };
+    el.addEventListener('input', onEdit);
+    el.addEventListener('change', onEdit);
     el.querySelector('.file').onchange = async ev => {
       await addFiles(card, [...ev.target.files]); ev.target.value = '';
     };
@@ -1376,8 +1642,8 @@
       el.querySelector('.reasonBlock').classList.toggle('hidden', !ev.target.checked);
     };
     el.querySelector('.category').onchange = () => showLeft(card);
-    el.querySelector('.segExp').onclick = () => setAdvance(card, false);
-    el.querySelector('.segAdv').onclick = () => setAdvance(card, true);
+    el.querySelector('.segExp').onclick = () => { setAdvance(card, false); checkOver(); saveDraftSoon(); };
+    el.querySelector('.segAdv').onclick = () => { setAdvance(card, true); checkOver(); saveDraftSoon(); };
     if (advance) setAdvance(card, true);
 
     cards.push(card);
@@ -1421,6 +1687,94 @@
     const iso = parseUa(text);
     if (!iso) throw new Error('Дата має бути у форматі дд.мм.рррр, напр. 13.10.2026.');
     return iso;
+  }
+
+  // ---------- валюта (F10): курс НБУ на дату витрати ----------
+  const rates = {};
+  const amountOf = card => parseNum(card.el.querySelector('.amount').value);
+  function updateRate(card) {
+    const cur = card.el.querySelector('.currency').value, hint = card.el.querySelector('.rateHint');
+    if (cur === 'UAH') { card.rate = 1; hint.textContent = ''; return; }
+    card.rate = 0;
+    let iso = '';
+    try { iso = dateOf(card); } catch (e) {}
+    if (!iso) { hint.textContent = 'Вкажіть дату — суму перерахуємо в гривні за курсом НБУ.'; return; }
+    const show = r => {
+      if (card.el.querySelector('.currency').value !== cur) return;
+      card.rate = r;
+      const a = amountOf(card);
+      hint.textContent = `Курс НБУ на ${dmy(iso)}: ${r.toLocaleString('uk-UA', { maximumFractionDigits: 4 })} ₴` +
+        (a ? ` · у звіт піде ≈ ${uah(a * r)}` : '');
+      checkOver();
+    };
+    if (rates[cur + iso]) { show(rates[cur + iso]); return; }
+    hint.textContent = 'Отримую курс НБУ…';
+    call('getRate', cur, iso).then(r => { rates[cur + iso] = r.rate; show(r.rate); }).catch(e => { hint.textContent = errText(e); });
+  }
+
+  // ---------- розподіл одного чека на кілька категорій (F10) ----------
+  function toggleSplit(card, on) {
+    card.split = on;
+    card.el.classList.toggle('is-split', on);
+    card.el.querySelector('.splitBtn').textContent = on ? 'Одна категорія' : 'Розділити на кілька категорій';
+    card.el.querySelector('.addSplit').classList.toggle('hidden', !on);
+    const box = card.el.querySelector('.splitRows');
+    box.innerHTML = '';
+    if (on) { addSplit(card, card.el.querySelector('.category').value); addSplit(card); }
+    updateSplitSum(card); checkOver(); saveDraftSoon();
+  }
+  function addSplit(card, cat, amount) {
+    const row = document.createElement('div');
+    row.className = 'split-row';
+    row.innerHTML = '<select class="splitCat" aria-label="Категорія частини"></select>' +
+      '<input type="number" class="splitAmt" inputmode="decimal" step="0.01" min="0.01" placeholder="Сума">' +
+      '<button type="button" class="x2" aria-label="Прибрати частину">×</button>';
+    fillSelect(row.querySelector('.splitCat'), cat || '');
+    if (amount) row.querySelector('.splitAmt').value = amount;
+    row.querySelector('.x2').onclick = () => {
+      row.remove();
+      if (card.el.querySelectorAll('.split-row').length < 2) toggleSplit(card, false);
+      updateSplitSum(card); checkOver(); saveDraftSoon();
+    };
+    card.el.querySelector('.splitRows').appendChild(row);
+    updateSplitSum(card);
+  }
+  const splitsOf = card => [...card.el.querySelectorAll('.split-row')].map(r => ({
+    category: r.querySelector('.splitCat').value, amount: r.querySelector('.splitAmt').value }));
+  function updateSplitSum(card) {
+    const el = card.el.querySelector('.splitSum');
+    if (!card.split) { el.textContent = ''; return; }
+    const sum = splitsOf(card).reduce((a, s) => a + parseNum(s.amount), 0), total = amountOf(card);
+    const diff = Math.round((total - sum) * 100) / 100;
+    el.textContent = !total ? 'Вкажіть загальну суму чека вище' : diff
+      ? `Розподілено ${num(sum)} з ${num(total)} · ${diff > 0 ? 'залишилось' : 'забагато на'} ${num(Math.abs(diff))}`
+      : `Розподілено всю суму ${num(total)}`;
+    el.classList.toggle('bad', !!diff || !total);
+  }
+
+  // ---------- перевищення бюджету (F6): попередження й обов'язкове пояснення ----------
+  function checkOver() {
+    const left = {};
+    categories.forEach(c => { left[c.name] = c.left; });
+    cards.forEach(card => {
+      const box = card.el.querySelector('.overBlock');
+      const parts = card.advance ? [] : card.split
+        ? splitsOf(card).map(s => ({ category: s.category, amount: parseNum(s.amount) }))
+        : [{ category: card.el.querySelector('.category').value, amount: amountOf(card) }];
+      const over = {};
+      parts.forEach(pt => {
+        if (!(pt.category in left) || !pt.amount || !card.rate) return;
+        left[pt.category] -= pt.amount * card.rate;
+        if (left[pt.category] < -0.005) over[pt.category] = -left[pt.category];
+      });
+      card.over = Object.keys(over).length > 0;
+      box.classList.toggle('hidden', !card.over);
+      if (card.over) {
+        box.querySelector('.over-warn').textContent = Object.entries(over)
+          .map(([c, n]) => `Перевищення бюджету «${c.replace(/^\d+\s*/, '').trim()}» на ${uah(n)}`).join('; ') +
+          '. Подати можна, але поясніть чому.';
+      }
+    });
   }
 
   function setAdvance(card, on) {
@@ -1471,6 +1825,63 @@
     return !card.files.length && !q('.amount') && !q('.description') && !q('.vendor');
   }
 
+  // ---------- чернетки (F3): незавершені картки зберігаються на цьому пристрої ----------
+  let draftChecked = false, draftReady = false, draftTimer = 0, dbPromise = null;
+  function draftStore(mode, fn) {
+    dbPromise = dbPromise || new Promise((res, rej) => {
+      const r = indexedDB.open('zvit', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('drafts');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    return dbPromise.then(db => new Promise((res, rej) => {
+      const tx = db.transaction('drafts', mode), req = fn(tx.objectStore('drafts'));
+      tx.oncomplete = () => res(req.result); tx.onerror = () => rej(tx.error);
+    }));
+  }
+  function saveDraftSoon() { if (draftReady) { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 600); } }
+  function saveDraft() {
+    if (!ME || !draftReady) return;
+    const list = cards.filter(c => !isEmpty(c)).map(serializeCard);
+    draftStore('readwrite', s => list.length
+      ? s.put({ ministryId: $('ministry').value, cards: list, at: Date.now() }, ME) : s.delete(ME))
+      .catch(e => console.warn('Чернетку не збережено:', e));
+  }
+  function serializeCard(c) {
+    const q = s => c.el.querySelector(s);
+    return { opId: c.opId, advance: c.advance, split: c.split, splits: c.split ? splitsOf(c) : [],
+      date: q('.dateText').value, amount: q('.amount').value, currency: q('.currency').value, category: q('.category').value,
+      description: q('.description').value, vendor: q('.vendor').value, noReceipt: q('.noReceipt').checked,
+      reason: q('.reason').value, advNote: q('.advNote').value, overReason: q('.overReason').value, files: c.files };
+  }
+  async function restoreDraft() {
+    let d = null;
+    try { d = await draftStore('readonly', s => s.get(ME)); } catch (e) {}
+    draftReady = true;
+    if (!d || !d.cards || !d.cards.length || d.ministryId !== $('ministry').value || cards.some(c => !isEmpty(c))) return;
+    cards.splice(0).forEach(c => c.el.remove());
+    d.cards.forEach(s => {
+      const c = addCard(null, s.advance, s.opId);
+      const q = sel => c.el.querySelector(sel);
+      setupDate(c.el, parseUa(s.date) || '');
+      q('.dateText').value = s.date || '';
+      q('.amount').value = s.amount || '';
+      if ([...q('.currency').options].some(o => o.value === s.currency)) q('.currency').value = s.currency;
+      fillSelect(q('.category'), s.category);
+      q('.description').value = s.description || ''; q('.vendor').value = s.vendor || '';
+      q('.noReceipt').checked = !!s.noReceipt; q('.noReceipt').dispatchEvent(new Event('change'));
+      q('.reason').value = s.reason || ''; q('.advNote').value = s.advNote || ''; q('.overReason').value = s.overReason || '';
+      if (s.split && s.splits.length > 1) {
+        toggleSplit(c, true);
+        q('.splitRows').innerHTML = '';
+        s.splits.forEach(pt => addSplit(c, pt.category, pt.amount));
+      }
+      c.files = s.files || [];
+      renderPhotos(c); showLeft(c); updateRate(c); updateSplitSum(c);
+    });
+    renumber(); checkOver();
+    showMsg($('msg'), 'ok', `Відновлено незавершені картки: ${d.cards.length}. Перевірте їх і натисніть «Надіслати».`);
+  }
+
   // ---------- photos ----------
   async function addFiles(card, files) {
     const lbl = card.el.querySelector('.addText');
@@ -1481,6 +1892,7 @@
       } catch (e) { /* пропускаємо файл, який не прочитався */ }
     }
     renderPhotos(card);
+    saveDraftSoon();
   }
 
   function renderPhotos(card) {
@@ -1492,7 +1904,7 @@
       if (f.preview) { const img = document.createElement('img'); img.src = f.preview; t.appendChild(img); }
       else { const p = document.createElement('div'); p.className = 'pdf'; p.textContent = '📄 ' + f.name; t.appendChild(p); }
       const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×';
-      x.onclick = () => { card.files.splice(i, 1); renderPhotos(card); };
+      x.onclick = () => { card.files.splice(i, 1); renderPhotos(card); saveDraftSoon(); };
       t.appendChild(x);
       box.insertBefore(t, add);
     });
@@ -1538,21 +1950,30 @@
   // ---------- submit ----------
   function payloadOf(card) {
     const q = s => card.el.querySelector(s);
+    const currency = q('.currency').value || 'UAH';
     if (card.advance) {
-      return { type: 'advance', opId: card.opId, date: dateOf(card),
-        amount: q('.amount').value, description: q('.advNote').value };
+      return { type: 'advance', opId: card.opId, date: dateOf(card), amount: q('.amount').value, currency,
+        description: q('.advNote').value };
     }
+    if (card.split) {
+      const sum = splitsOf(card).reduce((a, s) => a + parseNum(s.amount), 0);
+      if (Math.abs(sum - amountOf(card)) > 0.005) throw new Error('Суми частин мають скластися в загальну суму чека.');
+    }
+    if (card.over && !q('.overReason').value.trim()) throw new Error('Поясніть, чому перевищено бюджет.');
     const hasReceipt = !q('.noReceipt').checked;
     return {
       type: 'expense',
       opId: card.opId,
       date: dateOf(card),
       amount: q('.amount').value,
-      category: q('.category').value,
+      currency,
+      category: card.split ? (splitsOf(card)[0] || {}).category : q('.category').value,
+      splits: card.split ? splitsOf(card) : undefined,
       description: q('.description').value,
       vendor: q('.vendor').value,
       hasReceipt,
       noReceiptReason: q('.reason').value,
+      overReason: card.over ? q('.overReason').value : '',
       files: hasReceipt ? card.files.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })) : [],
     };
   }
@@ -1562,8 +1983,17 @@
       api.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
   }
 
+  window.addEventListener('online', () => {
+    if (cards.some(c => !isEmpty(c))) showMsg($('msg'), 'ok', 'Звʼязок відновився — можна надсилати.');
+  });
+
   $('submitAll').onclick = async () => {
     clearMsg($('msg'));
+    if (!navigator.onLine) {
+      saveDraft();
+      showMsg($('msg'), 'err', 'Немає інтернету. Картки збережено на цьому пристрої — натисніть «Надіслати», коли зʼявиться звʼязок.');
+      return;
+    }
     busy = true; updateSubmit();
     const queue = [];
     let failed = 0;
@@ -1631,6 +2061,7 @@
       addCard();
     }
     renumber();
+    saveDraft(); // у чернетці лишаються тільки ненадіслані картки
     if (ok) refreshInfo(); // баланс і аналітика — у фоні, не затримуючи повідомлення
   };
 
@@ -1640,7 +2071,8 @@
     if (!withFiles.length) return;
     $('submitAll').textContent = 'Готую завантаження…';
     const metas = withFiles.map(({ payload: p }) => ({
-      date: p.date, category: p.category, amount: p.amount, vendor: p.vendor, description: p.description,
+      date: p.date, category: p.category, splits: p.splits, amount: p.amount, currency: p.currency,
+      vendor: p.vendor, description: p.description,
       files: p.files.map(f => ({ name: f.name, mimeType: f.mimeType, size: Math.floor(f.base64.length * 3 / 4) - (f.base64.endsWith('==') ? 2 : f.base64.endsWith('=') ? 1 : 0) })),
     }));
     const sessions = await callApi('startUploads', [$('ministry').value, metas]);

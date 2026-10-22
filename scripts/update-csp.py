@@ -19,6 +19,8 @@ policy = '; '.join([
     "connect-src 'self' https://script.google.com https://script.googleusercontent.com "
     "https://www.googleapis.com https://accounts.google.com/gsi/",
     "frame-src https://accounts.google.com/gsi/",
+    "manifest-src 'self'",
+    "worker-src 'self'",                     # sw.js — застосунок на головному екрані
     "base-uri 'none'",
     "form-action 'none'",
 ])
