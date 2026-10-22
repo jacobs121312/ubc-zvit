@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-lUe1shsy9mJyL1RI+bRhqIJ+lckQM6wnRpKVr0eJzf4='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-L7BpIrVguf/HtR3ah/fAu0ylmucHpdPhV3Y6X4gZl2w='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex">
   <meta name="referrer" content="strict-origin">
@@ -496,6 +496,7 @@
       .op { break-inside: avoid; }
       .op-title, .op-sub { white-space: normal; }
     }
+    .tg.off { opacity: .4; pointer-events: none; cursor: default; filter: grayscale(1); }
   </style>
 </head>
 <body>
@@ -1277,6 +1278,7 @@
     if (!o || !o.telegram || !o.schedule) return;
     ORDER = o.schedule;
     $('orderLink').href = 'https://t.me/' + encodeURIComponent(o.telegram);
+    $('orderLink').onclick = ev => { if ($('orderLink').classList.contains('off')) ev.preventDefault(); };
     // «Пн–Ср 10:00–19:00 · Чт до 17:00»: групуємо дні з однаковими годинами
     const days = Object.keys(ORDER).map(Number).sort((a, b) => a - b), groups = [];
     days.forEach(d => {
@@ -1309,6 +1311,11 @@
     const today = ORDER[day];
     const open = !!today && minutes >= today[0] * 60 && minutes < today[1] * 60;
     $('order').classList.toggle('open', open);
+    // Поза годинами прийому кнопка неактивна — писати бухгалтеру можна лише в робочий час.
+    const link = $('orderLink');
+    link.classList.toggle('off', !open);
+    link.setAttribute('aria-disabled', String(!open));
+    link.tabIndex = open ? 0 : -1;
     let text;
     if (open) {
       const left = today[1] * 60 - minutes;
