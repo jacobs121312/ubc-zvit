@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Звіт по витратах · УБЦ</title>
+  <meta name="robots" content="noindex">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f6f7; --surface: #ffffff; --surface-2: #f1f1f3;
+      --border: #e5e5e9; --border-strong: #d4d4da;
+      --text: #0a0a0b; --muted: #66666f; --faint: #a1a1aa;
+      --accent: #2563eb; --primary: #0a0a0b; --primary-text: #ffffff;
+      --shadow: 0 1px 2px rgba(10, 10, 11, .04);
+      --ok: #15803d; --ok-bg: #ecfdf3; --err: #b91c1c; --err-bg: #fef2f2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #09090b; --surface: #131316; --surface-2: #1c1c20;
+        --border: #25252a; --border-strong: #33333a;
+        --text: #fafafa; --muted: #a1a1aa; --faint: #63636b;
+        --accent: #60a5fa; --primary: #fafafa; --primary-text: #0a0a0b;
+        --shadow: none;
+        --ok: #4ade80; --ok-bg: rgba(74, 222, 128, .1); --err: #f87171; --err-bg: rgba(248, 113, 113, .1);
+      }
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; letter-spacing: -0.011em;
+    }
+    :focus { outline: none; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    main { max-width: 520px; margin: 0 auto;
+      padding: calc(28px + env(safe-area-inset-top)) 16px calc(180px + env(safe-area-inset-bottom)); }
+    body.tab-stats main { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+
+    header { margin-bottom: 20px; }
+    .eyebrow { font-size: 12px; font-weight: 500; color: var(--muted); }
+    h1 { font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; margin: 2px 0 12px; }
+    .who {
+      display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+      padding: 5px 11px 5px 9px; border-radius: 999px; font-size: 13px; color: var(--muted);
+      background: var(--surface); border: 1px solid var(--border);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .who::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; flex: none; }
+
+    .card, .balance, .kpi {
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .card { border-radius: 18px; padding: 18px; margin-bottom: 12px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card-head h2 { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: -0.02em; }
+    .remove {
+      width: auto; padding: 5px 10px; font-size: 13px; font-weight: 500;
+      background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; box-shadow: none;
+    }
+
+    .balance { border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 2px; }
+    .balance .k, .kpi .k { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .balance b { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .balance .hint { font-size: 13px; }
+    .balance.owed b, .kpi.owed b { color: var(--err); }
+
+    label { display: block; font-weight: 500; font-size: 13px; color: var(--muted); margin: 16px 0 6px; }
+    .hint { font-weight: 400; color: var(--faint); }
+    input, select, textarea {
+      width: 100%; padding: 12px 13px; font: inherit; font-size: 16px; color: var(--text);
+      background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px;
+      transition: border-color .15s, box-shadow .15s; appearance: none; -webkit-appearance: none;
+    }
+    input::placeholder, textarea::placeholder { color: var(--faint); }
+    textarea { min-height: 76px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    select {
+      padding-right: 38px; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+    }
+    input[type=number] { font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=file] { display: none; }
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; min-width: 0; }
+    .row > div:first-child { flex: 1.3; }
+
+    /* Фото */
+    .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .thumb, .add-photo { position: relative; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden; }
+    .thumb { border: 1px solid var(--border); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb .pdf { display: flex; align-items: center; justify-content: center; height: 100%; padding: 8px;
+      font-size: 12px; text-align: center; word-break: break-all; color: var(--muted); background: var(--surface-2); }
+    .thumb .x {
+      position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; padding: 0;
+      border-radius: 50%; color: #fff; font-size: 15px; line-height: 24px; border: 0; box-shadow: none;
+      background: rgba(0,0,0,.6);
+    }
+    .add-photo {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      margin: 0; padding: 8px; cursor: pointer; text-align: center;
+      font-size: 12px; font-weight: 500; color: var(--muted);
+      background: var(--surface-2); border: 1px dashed var(--border-strong);
+      transition: border-color .15s, color .15s;
+    }
+    .add-photo:hover { border-color: var(--text); color: var(--text); }
+    .add-photo svg { width: 22px; height: 22px; }
+    .add-photo em { font-style: normal; }
+
+    /* Тумблер «Чека немає» */
+    .check { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      margin: 14px 0 0; font-size: 15px; font-weight: 500; color: var(--text); cursor: pointer; }
+    .check input {
+      order: 2; flex: none; width: 44px; height: 26px; padding: 0; margin: 0; border-radius: 999px; cursor: pointer;
+      background: var(--border-strong); border: 0; position: relative; transition: background .2s;
+    }
+    .check input::after {
+      content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s ease;
+    }
+    .check input:checked { background: var(--primary); }
+    .check input:checked::after { transform: translateX(18px); background: var(--bg); }
+    .check input:focus { box-shadow: none; }
+    .left { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 16px; font-variant-numeric: tabular-nums; }
+
+    /* Кнопки */
+    button {
+      width: 100%; padding: 14px; font: inherit; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+      color: var(--primary-text); background: var(--primary); border: 1px solid var(--primary);
+      border-radius: 12px; cursor: pointer; transition: opacity .15s, transform .1s, background .15s;
+    }
+    button:active { transform: scale(.985); }
+    button:disabled { opacity: .35; cursor: default; transform: none; }
+    button.secondary {
+      color: var(--text); background: var(--surface); border-color: var(--border); font-weight: 500;
+      display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow);
+    }
+    button.secondary:hover { border-color: var(--border-strong); }
+    button.secondary svg { width: 17px; height: 17px; color: var(--muted); flex: none; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .actions .wide { grid-column: 1 / -1; }
+
+    /* Нижня панель: «Надіслати» над вкладками */
+    .dock {
+      position: fixed; z-index: 5; left: 0; right: 0;
+      bottom: calc(68px + env(safe-area-inset-bottom)); padding: 10px 16px 8px;
+      background: linear-gradient(to top, var(--bg) 70%, transparent);
+    }
+    .dock button { display: block; max-width: 488px; margin: 0 auto; }
+    body.tab-stats .dock { display: none; }
+
+    .tabbar {
+      position: fixed; z-index: 6; left: 0; right: 0; bottom: 0;
+      display: flex; justify-content: center; gap: 4px;
+      padding: 6px 16px calc(6px + env(safe-area-inset-bottom));
+      background: var(--surface); border-top: 1px solid var(--border);
+    }
+    .tabbar button {
+      flex: 0 1 160px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0;
+      font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--faint);
+      background: transparent; border: 0; border-radius: 10px; min-height: 54px;
+    }
+    .tabbar button svg { width: 22px; height: 22px; }
+    .tabbar button.on { color: var(--text); }
+
+    .msg { margin-top: 12px; padding: 10px 13px; border-radius: 10px; font-size: 14px; display: none; border: 1px solid transparent; }
+    .msg.err { display: block; background: var(--err-bg); color: var(--err); border-color: color-mix(in srgb, var(--err) 20%, transparent); }
+    .msg.ok { display: block; background: var(--ok-bg); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 20%, transparent); }
+    .msg a { color: inherit; font-weight: 600; }
+    .hidden { display: none !important; }
+
+    /* Дата дд.мм.рррр + календар */
+    .datebox { position: relative; }
+    .datebox .dateText { padding-right: 40px; font-variant-numeric: tabular-nums; }
+    .datebox .calBtn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; }
+    .datebox .calBtn svg { width: 18px; height: 18px; }
+    /* Справжнє поле дати — прозоре, лежить поверх іконки: клік іде прямо в нього.
+       (Програмно відкрити календар у фреймі Apps Script браузер не дозволяє.) */
+    .datebox .date { position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      width: 36px; height: 36px; padding: 0; margin: 0; border: 0; opacity: 0; cursor: pointer; }
+    .datebox .date::-webkit-calendar-picker-indicator {
+      position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: pointer; }
+
+    /* Сегментований перемикач */
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; margin-bottom: 16px;
+      background: var(--surface-2); border-radius: 10px; }
+    .seg button { padding: 8px; font-size: 14px; font-weight: 500; color: var(--muted); border-radius: 8px;
+      background: transparent; border: 1px solid transparent; }
+    .seg button.on { color: var(--text); background: var(--surface); border-color: var(--border); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+    .advOnly { display: none; }
+    .is-advance .advOnly { display: block; }
+    .is-advance .expOnly { display: none; }
+
+    /* ---------- Аналітика ---------- */
+    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .kpi { border-radius: 16px; padding: 14px 15px; min-width: 0; }
+    .kpi b { display: block; margin-top: 4px; font-size: 21px; font-weight: 700; letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi .sub { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+    .sec-head h2 { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: -0.02em; }
+    .sec-head .hint { font-size: 12px; text-align: right; }
+    .cat { padding: 11px 0; }
+    .cat + .cat { border-top: 1px solid var(--border); }
+    .cat-top { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+    .cat-name { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cat-name small { color: var(--faint); font-weight: 400; margin-right: 5px; font-variant-numeric: tabular-nums; }
+    .cat-val { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13px; }
+    .track { height: 6px; margin-top: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+    .fill { height: 100%; border-radius: 999px; background: var(--accent); min-width: 2px; transition: width .5s ease; }
+    .cat.over .fill { background: var(--err); }
+    .over-tag { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--err); }
+    .chart { position: relative; }
+    .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .chart .bar { fill: var(--accent); }
+    .chart .bar.zero { fill: var(--border-strong); }
+    .chart .bar.active { fill: var(--text); }
+    .chart .axis { stroke: var(--border-strong); stroke-width: 1; }
+    .chart .grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 4; }
+    .chart text { font-size: 10px; fill: var(--faint); font-family: inherit; font-variant-numeric: tabular-nums; }
+    .chart text.cur { fill: var(--text); font-weight: 600; }
+    .chart text.val { fill: var(--text); font-weight: 600; }
+    .chart .hit { fill: transparent; cursor: pointer; }
+    .tip { position: absolute; transform: translate(-50%, -100%); pointer-events: none; white-space: nowrap;
+      padding: 7px 10px; border-radius: 10px; font-size: 12px; line-height: 1.35;
+      color: var(--primary-text); background: var(--primary); }
+    .tip b { font-variant-numeric: tabular-nums; }
+    .op { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
+    .op + .op { border-top: 1px solid var(--border); }
+    .op-ico { flex: none; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      background: var(--surface-2); color: var(--muted); }
+    .op-ico.inc { background: var(--ok-bg); color: var(--ok); }
+    .op-ico svg { width: 16px; height: 16px; }
+    .op-main { flex: 1; min-width: 0; }
+    .op-title { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .op-sub { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .op-right { flex: none; text-align: right; }
+    .op-link { display: inline-block; margin-top: 2px; font-size: 12px; font-weight: 500; color: var(--accent); text-decoration: none; }
+    .op-amt { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .op-amt.inc { color: var(--ok); }
+    .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 18px 0 8px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .refresh { width: auto; padding: 5px 10px; font-size: 13px; font-weight: 500; border-radius: 8px;
+      background: transparent; color: var(--text); border: 1px solid var(--border); }
+
+    /* Вхід */
+    .who-row { display: flex; align-items: center; gap: 8px; }
+    .logout { width: auto; padding: 5px 10px; font-size: 13px; font-weight: 500; border-radius: 999px;
+      background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .signin h2 { font-size: 18px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .signin p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+    /* Кнопка Google малюється у фреймі зі світлою схемою — даємо фрейму ту саму схему,
+       інакше браузер підкладає під нього білий прямокутник на темній сторінці. */
+    #gbtn { min-height: 44px; display: flex; justify-content: center; color-scheme: light; }
+    #gbtn iframe { color-scheme: light; }
+    .or { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; color: var(--faint); font-size: 12px; }
+    .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .people .op-title { font-size: 14px; }
+    .linkbtn { width: auto; display: block; margin: 12px auto 0; padding: 6px 8px; font-size: 14px; font-weight: 500;
+      background: transparent; color: var(--muted); border: 0; box-shadow: none; text-decoration: underline; text-underline-offset: 3px; }
+    body.signed-out .who::before { background: var(--faint); }
+    body.signed-out #ministryBlock, body.signed-out #viewSubmit, body.signed-out #viewStats,
+    body.signed-out .dock, body.signed-out .tabbar { display: none !important; }
+
+    /* ---------- Адмінка ---------- */
+    body.tab-admin #ministryBlock { display: none !important; }
+    .adm-tools { display: grid; gap: 10px; margin-bottom: 12px; }
+    .invite-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      padding: 12px 16px; margin-bottom: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); font-size: 14px; }
+    .person { display: flex; align-items: center; gap: 10px; padding: 10px 0; flex-wrap: wrap; }
+    .person + .person { border-top: 1px solid var(--border); }
+    .person .pm { flex: 1; min-width: 180px; }
+    .person .pe { font-size: 14px; font-weight: 500; word-break: break-all; }
+    .person .ps { font-size: 12px; color: var(--muted); }
+    .person .pa { display: flex; gap: 6px; }
+    .adm-row { cursor: pointer; transition: border-color .15s; }
+    .adm-row:hover { border-color: var(--border-strong); }
+    .adm-row .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .adm-row .nm { font-weight: 600; font-size: 15px; letter-spacing: -0.015em; }
+    .adm-row .rp { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .adm-row .sum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .badge { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+    .badge.warn { background: var(--err-bg); color: var(--err); }
+    .badge.ok { background: var(--ok-bg); color: var(--ok); }
+    .adm-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .adm-head h2 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
+    .back { width: auto; padding: 6px 12px; font-size: 14px; font-weight: 500; border-radius: 999px;
+      background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .links { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .links a { font-size: 13px; font-weight: 500; color: var(--text); text-decoration: none; padding: 7px 12px;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+    .op.nr .op-sub b { color: var(--err); font-weight: 600; }
+    .chk { width: auto; margin-top: 4px; padding: 3px 9px; font-size: 12px; font-weight: 500; border-radius: 999px;
+      background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .chk.on { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+    .chk:disabled { opacity: .5; }
+
+    /* Вибір служіння */
+    #ministryBlock { margin-bottom: 14px; }
+    .ministry-label { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+    .ministries { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .ministries::-webkit-scrollbar { display: none; }
+    .ministries button {
+      width: auto; flex: none; padding: 9px 14px; font-size: 14px; font-weight: 500; border-radius: 999px;
+      color: var(--text); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .ministries button.on { color: var(--primary-text); background: var(--primary); border-color: var(--primary); }
+
+    /* Замовлення коштів */
+    .order { border-radius: 18px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px;
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+    .order-main { flex: 1; min-width: 0; }
+    .order-title { font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+    .order-time { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .order-status { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
+    .order-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+    .order.open .order-status { color: var(--ok); }
+    .order.open .order-status::before { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .18); }
+    .tg {
+      flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 10px 14px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap;
+      color: var(--primary-text); background: var(--primary);
+    }
+    .order:not(.open) .tg { color: var(--text); background: var(--surface-2); }
+    .tg svg { width: 17px; height: 17px; }
+
+    /* ================= Десктоп (від 900 px; ширше — від 1200 px) ================= */
+    @media (min-width: 768px) {
+      main { max-width: 760px; }
+      .kpis { grid-template-columns: repeat(4, 1fr); }
+      .photos { grid-template-columns: repeat(5, 1fr); }
+    }
+    @media (min-width: 900px) {
+      :root { --side: 200px; --sidecol: 300px; --pad: 28px; }
+      body { font-size: 15px; }
+      main { max-width: 1160px; margin-left: calc(var(--side) + max(0px, (100vw - var(--side) - 1160px) / 2));
+        padding: 32px var(--pad) 64px; }
+      body.tab-stats main { padding-bottom: 64px; }
+      header { margin-bottom: 24px; }
+      h1 { font-size: 32px; }
+
+      /* навігація — бічна панель */
+      .tabbar { top: 0; bottom: 0; right: auto; width: var(--side); flex-direction: column; justify-content: flex-start;
+        gap: 4px; padding: 28px 14px; border-top: 0; border-right: 1px solid var(--border); }
+      .tabbar::before { content: "УБЦ · Звіт"; display: block; font-weight: 700; font-size: 15px; letter-spacing: -0.02em;
+        padding: 0 12px 20px; color: var(--text); }
+      .tabbar button { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 0;
+        padding: 10px 12px; font-size: 14px; font-weight: 500; color: var(--muted); border-radius: 10px; }
+      .tabbar button svg { width: 20px; height: 20px; }
+      .tabbar button:hover { background: var(--surface-2); color: var(--text); }
+      .tabbar button.on { background: var(--surface-2); color: var(--text); font-weight: 600; }
+
+      /* «Подати»: форма + липка бічна колонка */
+      #viewSubmit { display: grid; grid-template-columns: minmax(0, 1fr) var(--sidecol); gap: 20px; align-items: start; }
+      .sub-main { grid-column: 1; grid-row: 1; min-width: 0; }
+      .sub-side { grid-column: 2; grid-row: 1; position: sticky; top: 24px; display: grid; gap: 12px; }
+      .sub-side .order, .sub-side .balance { margin-bottom: 0; }
+      .dock { position: static; transform: none; width: auto; padding: 0; background: none; }
+      .dock button { max-width: none; padding: 15px; }
+      .card { padding: 22px; }
+      .actions { grid-template-columns: 1fr 1fr; }
+      .actions .wide { grid-column: 1 / -1; }
+      .photos { grid-template-columns: repeat(4, 1fr); }
+      /* у бічній колонці кнопка «Написати» — під текстом, на всю ширину */
+      .sub-side .order { flex-direction: column; align-items: stretch; gap: 12px; }
+      .sub-side .tg { justify-content: center; padding: 11px 14px; }
+      button:not(:disabled):hover { opacity: .92; }
+      button.secondary:not(:disabled):hover { opacity: 1; border-color: var(--border-strong); }
+
+      /* «Аналітика»: плитки в ряд, категорії і місяці поруч */
+      #viewStats { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; align-items: start; }
+      #viewStats > .kpis, #viewStats > section:last-of-type { grid-column: 1 / -1; }
+
+      /* «Адмін» */
+      #admMinistries { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+      #admMinistries .card { margin-bottom: 0; }
+      #admMinistries .empty { grid-column: 1 / -1; }
+      .adm-tools { grid-template-columns: minmax(0, 360px) 1fr; align-items: center; }
+      #admDetail { display: grid; grid-template-columns: minmax(280px, 34%) minmax(0, 1fr); gap: 0 16px; align-items: start; }
+      #admDetail > :not(section) { grid-column: 1 / -1; }
+      #admDetail > section:first-of-type { position: sticky; top: 24px; }
+
+      /* вхід — картка по центру */
+      body.signed-out main { max-width: 480px; margin-left: auto; margin-right: auto; }
+      body.signed-out header { text-align: left; }
+      .op { padding: 12px 0; }
+    }
+    @media (min-width: 1200px) {
+      :root { --side: 232px; --sidecol: 340px; --pad: 40px; }
+      main { padding-top: 40px; }
+      .actions { grid-template-columns: 1fr 1fr 1.4fr; }
+      .actions .wide { grid-column: auto; }
+      .photos { grid-template-columns: repeat(5, 1fr); }
+    }
+
+    @media (max-width: 420px) {
+      main { padding-left: 12px; padding-right: 12px; }
+      h1 { font-size: 26px; }
+      .card { padding: 16px 14px; }
+      .kpi b { font-size: 19px; }
+      .photos { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .thumb, .add-photo { border-radius: 10px; }
+      .add-photo em { font-size: 11px; }
+      .dock { padding-left: 12px; padding-right: 12px; }
+    }
+    /* Анімації аналітики: запускаються класом .anim на #viewStats */
+    .fill { transform-origin: left center; }
+    #viewStats.anim .fill { animation: grow-x .8s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms + 120ms); }
+    #viewStats.anim .chart .bar { transform-box: fill-box; transform-origin: 50% 100%;
+      animation: grow-y .7s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 40ms + 150ms); }
+    #viewStats.anim .chart text.val { animation: fade .3s ease-out both; animation-delay: .75s; }
+    #viewStats.anim .op { animation: slide-in .4s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 45ms + 200ms); }
+    #viewStats.anim .over-tag { animation: fade .3s ease-out both; animation-delay: .9s; }
+    @keyframes grow-x { from { transform: scaleX(0); } }
+    @keyframes grow-y { from { transform: scaleY(0); } }
+    @keyframes fade { from { opacity: 0; } }
+    @keyframes slide-in { from { opacity: 0; transform: translateY(8px); } }
+    @media (prefers-reduced-motion: reduce) {
+      .fill { transition: none; }
+      #viewStats.anim .fill, #viewStats.anim .chart .bar, #viewStats.anim .chart text.val,
+      #viewStats.anim .op, #viewStats.anim .over-tag { animation: none; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Українська Біблійна Церква</div>
+    <h1>Звіт по витратах</h1>
+    <div class="who-row"><div class="who" id="who">Завантаження…</div><button type="button" class="logout hidden" id="logout">Вийти</button></div>
+  </header>
+
+  <section class="card signin hidden" id="signin">
+    <h2 id="siTitle">Вхід</h2>
+    <p id="siLead">Увійдіть Google-акаунтом, пошта якого вписана для вашого служіння.</p>
+    <div id="gWrap"><div id="gbtn"></div></div>
+    <p class="hint" style="margin:14px 0 0;font-size:13px">Пошта не Gmail? До неї теж можна прив'язати Google-акаунт: accounts.google.com → «Створити акаунт» → «Використати наявну адресу електронної пошти».</p>
+    <div class="msg" id="authMsg"></div>
+  </section>
+
+  <div id="ministryBlock" class="hidden">
+    <div class="ministry-label">Служіння</div>
+    <div class="ministries" id="ministryPills" role="tablist" aria-label="Служіння"></div>
+    <select id="ministry" class="hidden" aria-hidden="true"></select>
+  </div>
+
+  <div id="viewSubmit">
+  <aside class="sub-side">
+  <div class="order hidden" id="order">
+    <div class="order-main">
+      <div class="order-title">Замовлення коштів</div>
+      <div class="order-time" id="orderTime"></div>
+      <div class="order-status" id="orderStatus">…</div>
+    </div>
+    <a class="tg" id="orderLink" href="#" target="_blank" rel="noopener" aria-label="Написати бухгалтеру в Telegram">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.6 4.2 2.9 11.4c-1.3.5-1.3 1.2-.2 1.6l4.8 1.5 1.8 5.6c.2.6.1.9.8.9.5 0 .7-.2 1-.5l2.3-2.3 4.9 3.6c.9.5 1.5.2 1.8-.8l3.2-15.2c.3-1.3-.5-1.9-1.7-1.6zM8.9 14.2l9.9-6.2c.5-.3.9-.1.5.2l-8.5 7.7-.3 3.6-1.6-5.3z"/></svg>
+      Написати
+    </a>
+  </div>
+  <div class="balance hidden" id="balance"></div>
+  <div class="dock">
+    <button type="button" id="submitAll" disabled>Надіслати</button>
+  </div>
+  </aside>
+  <div class="sub-main">
+
+  <div id="cards"></div>
+
+  <div class="actions">
+    <button type="button" class="secondary" id="addCard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Витрата
+    </button>
+    <button type="button" class="secondary" id="addAdvance">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="3"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/></svg>
+      Аванс
+    </button>
+    <button type="button" class="secondary wide" id="bulkBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="13" height="15" rx="3"/><path d="M4 7v11a3 3 0 0 0 3 3h9"/></svg>
+      Кілька чеків одразу
+    </button>
+    <input type="file" id="bulkFiles" accept="image/*,application/pdf" multiple>
+  </div>
+  <div class="msg" id="msg"></div>
+  </div>
+  </div>
+
+  <div id="viewStats" class="hidden">
+    <div class="kpis" id="kpis"></div>
+
+    <section class="card">
+      <div class="sec-head"><h2>По категоріях</h2><span class="hint">витрачено / бюджет</span></div>
+      <div id="catList"></div>
+    </section>
+
+    <section class="card">
+      <div class="sec-head"><h2>По місяцях</h2><span class="hint">витрати, ₴ · торкніться стовпчика</span></div>
+      <div class="chart" id="monthChart"></div>
+      <table class="sr-only" id="monthTable"></table>
+    </section>
+
+    <section class="card">
+      <div class="sec-head"><h2>Останні операції</h2><button type="button" class="refresh" id="refresh">Оновити</button></div>
+      <div class="ops" id="ops"></div>
+    </section>
+  </div>
+  <div id="viewAdmin" class="hidden">
+    <div id="admList">
+      <div class="kpis" id="admKpis"></div>
+      <div class="invite-bar hidden" id="inviteBar">
+        <span id="inviteText"></span>
+        <button type="button" id="inviteAll" style="width:auto;padding:10px 16px">Надіслати запрошення</button>
+      </div>
+      <div class="adm-tools">
+        <input type="search" id="admSearch" placeholder="Пошук: служіння або відповідальний">
+        <div class="ministries" id="admFilters"></div>
+      </div>
+      <div id="admMinistries"></div>
+    </div>
+    <div id="admDetail" class="hidden"></div>
+  </div>
+</main>
+
+
+<nav class="tabbar" aria-label="Розділи">
+  <button type="button" class="on" data-tab="submit">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9.5 13h6M12.5 10v6"/></svg>
+    Подати
+  </button>
+  <button type="button" data-tab="stats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx="1"/><rect x="10.5" y="6" width="3" height="11" rx="1"/><rect x="15.5" y="9" width="3" height="8" rx="1"/></svg>
+    Аналітика
+  </button>
+  <button type="button" data-tab="admin" class="hidden" id="tabAdmin">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+    Адмін
+  </button>
+</nav>
+
+<template id="cardTpl">
+  <section class="card">
+    <div class="card-head">
+      <h2 class="title">Витрата</h2>
+      <button type="button" class="remove">Прибрати</button>
+    </div>
+
+    <div class="seg">
+      <button type="button" class="segExp on">Витрата</button>
+      <button type="button" class="segAdv">Аванс</button>
+    </div>
+
+    <div class="expOnly">
+    <div class="receipt">
+      <div class="photos">
+        <label class="add-photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>
+          <em class="addText">Фото чека</em>
+          <input type="file" class="file" accept="image/*,application/pdf" multiple>
+        </label>
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" class="noReceipt"><span>Чека немає</span></label>
+    <div class="reasonBlock hidden">
+      <label>Чому немає чека <span class="hint">· обов'язково</span></label>
+      <textarea class="reason"></textarea>
+    </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label><span class="expOnly">Дата</span><span class="advOnly">Коли отримав</span></label>
+        <div class="datebox">
+          <input type="text" class="dateText" inputmode="numeric" placeholder="дд.мм.рррр" maxlength="10">
+          <span class="calBtn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
+          <input type="date" class="date" aria-label="Обрати дату в календарі">
+        </div>
+      </div>
+      <div>
+        <label>Сума, ₴</label>
+        <input type="number" class="amount" inputmode="decimal" step="0.01" min="0.01" placeholder="0">
+      </div>
+    </div>
+
+    <div class="expOnly">
+      <label>Категорія</label>
+      <select class="category"></select>
+      <div class="left"></div>
+
+      <label>Що це і для чого</label>
+      <textarea class="description" placeholder="Батарейки для мікрофонів на недільне служіння"></textarea>
+
+      <label>Постачальник <span class="hint">· магазин або сервіс</span></label>
+      <input type="text" class="vendor" placeholder="Епіцентр">
+    </div>
+
+    <div class="advOnly">
+      <label>Коментар <span class="hint">· необов'язково</span></label>
+      <textarea class="advNote" placeholder="Аванс на жовтень, отримав у бухгалтерії"></textarea>
+    </div>
+
+    <div class="msg cardMsg"></div>
+  </section>
+</template>
+
+<script>
+  // ---------- зв'язок із сервером (Google Apps Script API) ----------
+  const APP = {
+    API_URL: 'https://script.google.com/macros/s/AKfycbzMhQwj2Ktpbt5o-cWZA-kbm8TkXK21xg2fvU3rTB8KeFRQMnISPVUx3-tkS-Ghn0USpA/exec',
+    CLIENT_ID: '179473446982-arfkrdps29phumqufgrkhh45oaq32d5l.apps.googleusercontent.com',
+  };
+
+  // Вхід: або Google ID token (~1 год, лише ця вкладка), або сесія після пароля (30 днів, цей пристрій).
+  let auth = null; // { kind: 'google'|'session', token, exp }
+  let tokenWaiters = [];
+  try {
+    auth = JSON.parse(localStorage.getItem('auth') || 'null') || JSON.parse(sessionStorage.getItem('auth') || 'null');
+    if (auth && auth.kind !== 'google') { auth = null; localStorage.removeItem('auth'); } // вхід за паролем прибрано
+  } catch (e) {}
+
+  function jwtExp(t) {
+    try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).exp * 1000; } catch (e) { return 0; }
+  }
+  function authValid() { return auth && auth.exp - Date.now() > 60000; }
+  function saveAuth(a) {
+    auth = a;
+    try {
+      localStorage.removeItem('auth'); sessionStorage.removeItem('auth');
+      if (a) (a.kind === 'session' ? localStorage : sessionStorage).setItem('auth', JSON.stringify(a));
+    } catch (e) {}
+  }
+
+  function setSignedIn(on) {
+    document.body.classList.toggle('signed-out', !on);
+    document.getElementById('signin').classList.toggle('hidden', on);
+    document.getElementById('logout').classList.toggle('hidden', !on);
+    if (!on) document.getElementById('who').textContent = 'Не виконано вхід';
+  }
+
+  function signedIn(a) {
+    saveAuth(a);
+    setSignedIn(true);
+    const w = tokenWaiters; tokenWaiters = []; w.forEach(f => f(a));
+  }
+
+  function onCredential(resp) {
+    signedIn({ kind: 'google', token: resp.credential, exp: jwtExp(resp.credential) });
+  }
+
+  let gisReady = false;
+  function initGis() {
+    if (gisReady || !window.google || !google.accounts || !google.accounts.id) return;
+    gisReady = true;
+    google.accounts.id.initialize({ client_id: APP.CLIENT_ID, callback: onCredential, auto_select: false, cancel_on_tap_outside: true, login_hint: loginHint || undefined });
+    const dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+    const box = document.getElementById('gbtn');
+    google.accounts.id.renderButton(box, {
+      theme: dark ? 'filled_black' : 'outline', size: 'large', shape: 'rectangular', text: 'signin_with',
+      locale: 'uk', logo_alignment: 'center', width: Math.min(400, Math.max(220, box.clientWidth || 320)),
+    });
+  }
+  window.addEventListener('load', initGis);
+
+  function getAuth() {
+    if (authValid()) return Promise.resolve(auth);
+    saveAuth(null);
+    setSignedIn(false);
+    initGis();
+    try { google.accounts.id.prompt(); } catch (e) {}
+    return new Promise(res => tokenWaiters.push(res));
+  }
+
+  function post(body, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', APP.API_URL);
+      xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8'); // без preflight-запиту
+      if (onProgress) xhr.upload.onprogress = ev => { if (ev.lengthComputable) onProgress(ev.loaded / ev.total); };
+      xhr.onload = () => {
+        let j;
+        try { j = JSON.parse(xhr.responseText); } catch (e) { reject(new Error('Сервер не відповів. Спробуйте ще раз.')); return; }
+        if (!j.ok) { const e = new Error(j.error); e.auth = j.auth; reject(e); return; }
+        resolve(j.result);
+      };
+      xhr.onerror = () => reject(new Error('Немає звʼязку з сервером. Перевірте інтернет.'));
+      xhr.send(JSON.stringify(body));
+    });
+  }
+
+  async function callApi(fn, args, onProgress) {
+    const a = await getAuth();
+    try {
+      return await post({ fn, args, token: a.token, kind: a.kind }, onProgress);
+    } catch (e) {
+      if (e.auth) saveAuth(null);
+      throw e;
+    }
+  }
+
+  const authMsg = (type, text) => { const m = document.getElementById('authMsg'); m.className = 'msg ' + type; m.textContent = text; };
+  function setAuthStep() {} // сумісність: кроків входу більше немає
+
+  // Посилання із запрошення (?email=…) — підказка Google, яким акаунтом входити.
+  let loginHint = '';
+  try {
+    loginHint = new URLSearchParams(location.search).get('email') || '';
+    if (loginHint) history.replaceState(null, '', location.pathname);
+  } catch (e) {}
+
+  // Той самий інтерфейс, що й google.script.run: api.run.withSuccessHandler(..).withFailureHandler(..).fn(...)
+  const api = {
+    get run() {
+      const h = {};
+      const p = new Proxy({}, { get(_, k) {
+        if (k === 'withSuccessHandler') return f => { h.ok = f; return p; };
+        if (k === 'withFailureHandler') return f => { h.err = f; return p; };
+        return (...args) => { callApi(k, args).then(r => h.ok && h.ok(r), e => h.err && h.err(e)); };
+      } });
+      return p;
+    },
+  };
+
+  document.getElementById('logout').onclick = () => {
+    saveAuth(null);
+    try { localStorage.removeItem('ministry'); } catch (e) {}
+    try { google.accounts.id.disableAutoSelect(); } catch (e) {}
+    location.reload();
+  };
+  setSignedIn(authValid());
+</script>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const uah = n => n.toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' ₴';
+  let categories = [];
+  let limits = { min: '', max: '' };
+  const cards = []; // { el, files: [{name, mimeType, base64, preview}] }
+  let busy = false;
+
+  function showMsg(el, type, html) {
+    el.className = el.className.replace(/\b(ok|err)\b/g, '').trim() + ' ' + type;
+    if (type === 'err') el.textContent = html; else el.innerHTML = html; // помилки — лише як текст
+  }
+  /** Посилання з даних показуємо, лише якщо воно веде на Google Диск/Документи. */
+  const safeUrl = u => /^https:\/\/(drive|docs)\.google\.com\//.test(String(u || '')) ? String(u) : '';
+  function clearMsg(el) { el.className = el.className.replace(/\b(ok|err)\b/g, '').trim(); el.innerHTML = ''; }
+  function errText(e) { return (e && e.message ? e.message : String(e)).replace(/^Error:\s*/, ''); }
+
+  function todayIso() {
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    const t = d.toISOString().slice(0, 10);
+    return t >= limits.min && t <= limits.max ? t : '';
+  }
+
+  // ---------- init ----------
+  api.run
+    .withSuccessHandler(data => {
+      limits = { min: data.minDate, max: data.maxDate };
+      setOrder(data.order);
+      for (const m of data.ministries) {
+        const o = document.createElement('option'); o.value = m.id; o.textContent = m.name;
+        $('ministry').appendChild(o);
+      }
+      // Останнє обране служіння запамʼятовуємо на цьому пристрої.
+      try {
+        const last = localStorage.getItem('ministry');
+        if (data.ministries.some(m => m.id === last)) $('ministry').value = last;
+      } catch (e) {}
+      renderMinistryPills(data.ministries);
+      $('ministryBlock').classList.toggle('hidden', data.ministries.length < 2);
+      $('tabAdmin').classList.toggle('hidden', !data.isAdmin);
+      if (!data.ministries.length) {
+        // Лише адмін, без власного служіння: показуємо тільки адмінку.
+        document.querySelectorAll('.tabbar [data-tab="submit"], .tabbar [data-tab="stats"]').forEach(b => b.classList.add('hidden'));
+        $('who').textContent = `${data.email} · адмін`;
+        setTab('admin');
+        return;
+      }
+      $('who').textContent = data.ministries.length < 2
+        ? `${data.ministries[0].name} · ${data.email}`
+        : data.email;
+      addCard();
+      loadCategories();
+      try { if (data.isAdmin && localStorage.getItem('tab') === 'admin') setTab('admin'); } catch (e) {}
+    })
+    .withFailureHandler(e => {
+      if (e.auth) { // пошти немає в списку або сесія закінчилась — назад на вхід із поясненням
+        saveAuth(null); setSignedIn(false);
+        try { setAuthStep('email'); } catch (x) {}
+        authMsg('err', errText(e));
+        return;
+      }
+      $('who').textContent = ''; showMsg($('msg'), 'err', errText(e));
+    })
+    .getInitData();
+
+  $('ministry').addEventListener('change', loadCategories);
+
+  function renderMinistryPills(list) {
+    $('ministryPills').innerHTML = '';
+    list.forEach(m => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = m.name; b.setAttribute('role', 'tab');
+      const sync = () => document.querySelectorAll('#ministryPills button').forEach((x, i) => {
+        const on = list[i].id === $('ministry').value;
+        x.classList.toggle('on', on); x.setAttribute('aria-selected', on);
+      });
+      b.onclick = () => {
+        if (busy || $('ministry').value === m.id) return;
+        $('ministry').value = m.id;
+        try { localStorage.setItem('ministry', m.id); } catch (e) {}
+        sync();
+        $('balance').classList.add('hidden');
+        $('ministry').dispatchEvent(new Event('change'));
+      };
+      $('ministryPills').appendChild(b);
+      sync();
+    });
+  }
+
+  function loadCategories() {
+    $('submitAll').disabled = true;
+    api.run
+      .withSuccessHandler(applyInfo)
+      .withFailureHandler(e => showMsg($('msg'), 'err', errText(e)))
+      .getCategories($('ministry').value);
+  }
+
+  /** Категорії, баланс і аналітика — з getCategories або одразу з результату запису. */
+  function applyInfo(data) {
+        categories = data.categories;
+        cards.forEach(fillCategories);
+        if (data.balance) {
+          // Мінус = лідер витратив більше, ніж отримав авансів → церква має відшкодувати.
+          const owed = data.balance.amount < 0;
+          $('balance').classList.toggle('owed', owed);
+          $('balance').innerHTML = `<span class="k">${owed ? 'До відшкодування' : 'На руках'}</span><b>${uah(Math.abs(data.balance.amount))}</b><span class="hint">${owed ? 'витрачено більше, ніж отримано авансів' : 'баланс на кінець'} · ${data.balance.month}</span>`;
+          $('balance').classList.remove('hidden');
+        }
+        renderDashboard(data);
+        updateSubmit();
+  }
+
+  function fillCategories(card) {
+    const sel = card.el.querySelector('.category');
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Оберіть категорію</option>';
+    for (const c of categories) {
+      const o = document.createElement('option'); o.value = c.name; o.textContent = c.name.trim();
+      sel.appendChild(o);
+    }
+    if (categories.some(c => c.name === keep)) sel.value = keep;
+    showLeft(card);
+  }
+
+  function showLeft(card) {
+    const c = categories.find(c => c.name === card.el.querySelector('.category').value);
+    card.el.querySelector('.left').textContent = c ? `Залишок по бюджету: ${uah(c.left)} з ${uah(c.plan)}` : '';
+  }
+
+
+  // ---------- вкладки ----------
+  function setTab(tab) {
+    document.body.classList.toggle('tab-stats', tab !== 'submit'); // ховає «Надіслати»
+    document.body.classList.toggle('tab-admin', tab === 'admin');
+    $('viewSubmit').classList.toggle('hidden', tab !== 'submit');
+    $('viewStats').classList.toggle('hidden', tab !== 'stats');
+    $('viewAdmin').classList.toggle('hidden', tab !== 'admin');
+    if (tab === 'admin') openAdmin();
+    document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+    try { localStorage.setItem('tab', tab); } catch (e) {}
+    window.scrollTo({ top: 0 });
+    if (tab === 'stats') requestAnimationFrame(animateStats); // після ініціалізації всього скрипту
+  }
+  document.querySelectorAll('.tabbar button').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+  try { if (localStorage.getItem('tab') === 'stats') setTab('stats'); } catch (e) {} // «Адмін» — лише після перевірки прав
+  $('refresh').onclick = () => { $('refresh').textContent = 'Оновлюю…'; loadCategories(); };
+
+  // ---------- аналітика ----------
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const SHORT = { 'Жовтень': 'Жов', 'Листопад': 'Лис', 'Грудень': 'Гру', 'Січень': 'Січ', 'Лютий': 'Лют', 'Березень': 'Бер',
+    'Квітень': 'Кві', 'Травень': 'Тра', 'Червень': 'Чер', 'Липень': 'Лип', 'Серпень': 'Сер', 'Вересень': 'Вер' };
+  const MONTH_NAMES = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
+  const compact = n => n >= 1000 ? (Math.round(n / 100) / 10).toLocaleString('uk-UA') + ' тис' : Math.round(n).toLocaleString('uk-UA');
+  const dmy = iso => iso.split('-').reverse().join('.');
+
+  function renderDashboard(d) {
+    $('refresh').textContent = 'Оновити';
+    const cats = d.categories || [];
+    const plan = cats.reduce((a, c) => a + c.plan, 0);
+    const spent = cats.reduce((a, c) => a + c.spent, 0);
+    const pct = plan ? Math.round(spent / plan * 100) : 0;
+    const advances = (d.months || []).reduce((a, m) => a + m.income, 0);
+
+    $('kpis').innerHTML = [
+      ['Бюджет на рік', plan, `${cats.length} категорій`],
+      ['Витрачено', spent, `${pct}% бюджету`],
+      ['Залишок', plan - spent, plan - spent < 0 ? 'бюджет перевищено' : 'до кінця року'],
+      d.balance && d.balance.amount < 0
+        ? ['До відшкодування', -d.balance.amount, `авансів: ${uah(advances)}`, 'owed']
+        : ['На руках', d.balance ? d.balance.amount : null, `авансів: ${uah(advances)}`],
+    ].map(([k, v, sub, cls]) => `<div class="kpi ${cls || ''}"><div class="k">${k}</div>` +
+      `<b${v === null ? '' : ` data-v="${v}"`}>${v === null ? '—' : uah(v)}</b><div class="sub">${sub}</div></div>`).join('');
+
+    $('catList').innerHTML = cats.length ? cats.map((c, ci) => {
+      const code = (c.name.match(/^\d+/) || [''])[0];
+      const name = c.name.replace(/^\d+\s*/, '').trim();
+      const p = c.plan ? c.spent / c.plan * 100 : 0;
+      const over = c.spent > c.plan;
+      return `<div class="cat${over ? ' over' : ''}">
+        <div class="cat-top"><span class="cat-name"><small>${esc(code)}</small>${esc(name)}</span>
+          <span class="cat-val">${uah(c.spent)} / ${uah(c.plan)}</span></div>
+        <div class="track" role="meter" aria-valuemin="0" aria-valuemax="${c.plan}" aria-valuenow="${c.spent}" aria-label="${esc(name)}">
+          <div class="fill" style="width:${Math.min(100, p).toFixed(1)}%;--i:${ci}"></div></div>
+        ${over ? `<div class="over-tag">▲ перевищено на ${uah(c.spent - c.plan)}</div>` : ''}
+      </div>`;
+    }).join('') : '<div class="empty">Немає категорій у бюджеті</div>';
+
+    renderMonthChart(d.months || []);
+
+    const ops = d.recent || [];
+    const icoExp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+    const icoInc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+    $('ops').innerHTML = ops.length ? ops.map((o, oi) => {
+      const inc = o.income > 0 && !o.expense;
+      const title = inc ? (o.description || 'Аванс') : (o.description || o.category || 'Витрата');
+      const sub = [dmy(o.date), inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ');
+      const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>` : '';
+      return `<div class="op" style="--i:${Math.min(oi, 10)}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? icoInc : icoExp}</div>
+        <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div></div>
+        <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
+    }).join('') : '<div class="empty">Цього року ще немає операцій</div>';
+    animateStats();
+  }
+
+  // Перезапуск анімацій аналітики (при відкритті вкладки й після оновлення даних).
+  const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let countRaf = 0;
+  function animateStats() {
+    const view = $('viewStats');
+    if (view.classList.contains('hidden')) return;
+    view.classList.remove('anim'); void view.offsetWidth; view.classList.add('anim');
+    cancelAnimationFrame(countRaf);
+    const els = [...document.querySelectorAll('#kpis b[data-v]')];
+    if (reduceMotion() || !els.length) return;
+    const t0 = performance.now(), dur = 900;
+    const step = now => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      els.forEach(b => { const v = +b.dataset.v; b.textContent = uah(p < 1 ? Math.round(v * e) : v); });
+      if (p < 1) countRaf = requestAnimationFrame(step);
+    };
+    countRaf = requestAnimationFrame(step);
+  }
+
+  function renderMonthChart(months) {
+    const box = $('monthChart');
+    if (!months.length) { box.innerHTML = '<div class="empty">Немає даних</div>'; return; }
+    const W = 340, H = 200, top = 52, bottom = 22, left = 4, right = 4; // зверху місце для підказки
+    const ih = H - top - bottom, band = (W - left - right) / months.length, bw = Math.min(18, band * 0.55);
+    const max = Math.max(...months.map(m => m.expense), 1);
+    const cur = MONTH_NAMES[new Date().getMonth()];
+    const y = v => top + ih - (v / max) * ih;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Витрати по місяцях">`;
+    svg += `<line class="grid" x1="${left}" x2="${W - right}" y1="${top}" y2="${top}"/>`;
+    svg += `<text x="${W - right}" y="${top - 6}" text-anchor="end">${compact(max)} ₴</text>`;
+    months.forEach((m, i) => {
+      const cx = left + band * i + band / 2;
+      const h = m.expense ? Math.max(3, top + ih - y(m.expense)) : 2;
+      const yy = top + ih - h, r = Math.min(4, bw / 2, h);
+      // стовпчик із заокругленим верхом, прямий низ на осі
+      svg += `<path class="bar${m.expense ? '' : ' zero'}" data-i="${i}" style="--i:${i}" d="M${cx - bw / 2},${top + ih} V${yy + r} Q${cx - bw / 2},${yy} ${cx - bw / 2 + r},${yy} H${cx + bw / 2 - r} Q${cx + bw / 2},${yy} ${cx + bw / 2},${yy + r} V${top + ih} Z"/>`;
+      if (m.name === cur && m.expense) svg += `<text class="val" x="${cx}" y="${yy - 5}" text-anchor="middle">${compact(m.expense)}</text>`;
+      svg += `<text class="${m.name === cur ? 'cur' : ''}" x="${cx}" y="${H - 6}" text-anchor="middle">${SHORT[m.name] || m.name}</text>`;
+      svg += `<rect class="hit" data-i="${i}" x="${cx - band / 2}" y="0" width="${band}" height="${H}"/>`;
+    });
+    svg += `<line class="axis" x1="${left}" x2="${W - right}" y1="${top + ih + .5}" y2="${top + ih + .5}"/></svg>`;
+    box.innerHTML = svg + '<div class="tip hidden"></div>';
+
+    $('monthTable').innerHTML = '<caption>Витрати по місяцях</caption><tr><th>Місяць</th><th>Витрати</th><th>Аванси</th></tr>' +
+      months.map(m => `<tr><td>${m.name}</td><td>${uah(m.expense)}</td><td>${uah(m.income)}</td></tr>`).join('');
+
+    const tip = box.querySelector('.tip'), svgEl = box.querySelector('svg');
+    const show = i => {
+      const m = months[i], bar = svgEl.querySelector(`.bar[data-i="${i}"]`);
+      svgEl.querySelectorAll('.bar').forEach(b => b.classList.toggle('active', b === bar));
+      const bb = bar.getBoundingClientRect(), cb = box.getBoundingClientRect();
+      tip.innerHTML = `${m.name}<br>витрати <b>${uah(m.expense)}</b>${m.income ? `<br>аванс <b>${uah(m.income)}</b>` : ''}`;
+      tip.classList.remove('hidden');
+      const x = Math.max(60, Math.min(cb.width - 60, bb.left - cb.left + bb.width / 2));
+      tip.style.left = x + 'px';
+      tip.style.top = Math.max(0, bb.top - cb.top - 8) + 'px';
+    };
+    const hide = () => { tip.classList.add('hidden'); svgEl.querySelectorAll('.bar').forEach(b => b.classList.remove('active')); };
+    svgEl.querySelectorAll('.hit').forEach(h => {
+      h.addEventListener('pointerenter', () => show(+h.dataset.i));
+      h.addEventListener('click', () => show(+h.dataset.i));
+    });
+    svgEl.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hide(); });
+  }
+
+  // ---------- замовлення коштів (київський час) — контакт і години приходять із сервера після входу ----------
+  let ORDER = {}; // день тижня (1 = пн) → [з, до]
+  const DAY_SHORT = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  function setOrder(o) {
+    if (!o || !o.telegram || !o.schedule) return;
+    ORDER = o.schedule;
+    $('orderLink').href = 'https://t.me/' + encodeURIComponent(o.telegram);
+    // «Пн–Ср 10:00–19:00 · Чт до 17:00»: групуємо дні з однаковими годинами
+    const days = Object.keys(ORDER).map(Number).sort((a, b) => a - b), groups = [];
+    days.forEach(d => {
+      const g = groups[groups.length - 1], h = ORDER[d].join('-');
+      if (g && g.h === h && g.to === d - 1) g.to = d; else groups.push({ from: d, to: d, h });
+    });
+    $('orderTime').textContent = groups.map((g, i) => {
+      const [a, b] = g.h.split('-');
+      const dd = g.from === g.to ? DAY_SHORT[g.from] : `${DAY_SHORT[g.from]}–${DAY_SHORT[g.to]}`;
+      return i === 0 ? `${dd} ${a}:00–${b}:00` : `${dd} до ${b}:00`;
+    }).join(' · ');
+    $('order').classList.remove('hidden');
+    updateOrder();
+  }
+  const DAY_NAMES = ['неділю', 'понеділок', 'вівторок', 'середу', 'четвер', 'пʼятницю', 'суботу'];
+
+  function kyivNow() {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Kyiv', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date()).map(p => [p.type, p.value]));
+    const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.weekday);
+    return { day, minutes: +parts.hour * 60 + +parts.minute };
+  }
+
+  function updateOrder() {
+    if (!Object.keys(ORDER).length) return;
+    const { day, minutes } = kyivNow();
+    const today = ORDER[day];
+    const open = !!today && minutes >= today[0] * 60 && minutes < today[1] * 60;
+    $('order').classList.toggle('open', open);
+    let text;
+    if (open) {
+      const left = today[1] * 60 - minutes;
+      text = left <= 60 ? `Приймаються ще ${left} хв` : `Приймаються до ${today[1]}:00`;
+    } else if (today && minutes < today[0] * 60) {
+      text = `Сьогодні з ${today[0]}:00`;
+    } else {
+      let d = day;
+      do { d = (d + 1) % 7; } while (!ORDER[d]);
+      text = d === (day + 1) % 7 ? `Завтра з ${ORDER[d][0]}:00` : `Наступне вікно: ${DAY_NAMES[d]}, ${ORDER[d][0]}:00`;
+    }
+    $('orderStatus').textContent = text;
+  }
+  updateOrder();
+  setInterval(updateOrder, 60000);
+
+
+
+  // ---------- адмінка: люди і запрошення ----------
+  const fmtDate = ms => new Date(ms).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const WEEK = 7 * 864e5;
+  function personStatus(u) {
+    if (u.lastSeen) return `заходив(ла) ${fmtDate(u.lastSeen)}`;
+    if (u.invitedAt) return `запрошення надіслано ${fmtDate(u.invitedAt)} · ще не заходив(ла)`;
+    return 'ще не заходив(ла) · запрошення не надсилали';
+  }
+  function updateInviteBar() {
+    const seen = {};
+    const pending = [];
+    adm.list.forEach(m => (m.users || []).forEach(u => {
+      if (seen[u.email]) return; seen[u.email] = 1;
+      if (!u.lastSeen && Date.now() - u.invitedAt > WEEK) pending.push(u.email);
+    }));
+    const total = Object.keys(seen).length;
+    $('inviteBar').classList.toggle('hidden', !total);
+    $('inviteText').textContent = pending.length
+      ? `Ще не запрошено: ${pending.length} із ${total} людей`
+      : `Усіх ${total} людей запрошено або вони вже заходили`;
+    $('inviteAll').disabled = !pending.length;
+  }
+  function markInvited(emails) {
+    const now = Date.now();
+    adm.list.forEach(m => (m.users || []).forEach(u => { if (emails.includes(u.email)) u.invitedAt = now; }));
+  }
+  function wireInviteAll() {
+    $('inviteAll').onclick = () => {
+      $('inviteAll').disabled = true; $('inviteAll').textContent = 'Надсилаю…';
+      call('adminSendInvites').then(r => {
+        const pending = [];
+        adm.list.forEach(m => (m.users || []).forEach(u => { if (!u.lastSeen && Date.now() - u.invitedAt > WEEK) pending.push(u.email); }));
+        markInvited(pending.slice(0, r.sent));
+        $('inviteAll').textContent = 'Надіслати запрошення';
+        updateInviteBar();
+        $('inviteText').textContent = `Надіслано: ${r.sent}` + (r.skipped ? ` · не вистачило денного ліміту Gmail ще на ${r.skipped}, надішліть завтра` : '');
+      }).catch(e => { $('inviteAll').disabled = false; $('inviteAll').textContent = 'Надіслати запрошення'; $('inviteText').textContent = errText(e); });
+    };
+  }
+
+  function peopleHtml(m) {
+    const users = (m && m.users) || [];
+    if (!users.length) return `<section class="card people"><div class="sec-head"><h2>Люди</h2></div>
+      <div class="empty">Пошти ще не вписані в таблицю служінь (колонка «Пошти»)</div></section>`;
+    return `<section class="card people"><div class="sec-head"><h2>Люди</h2><span class="hint">лідер і помічник</span></div>
+      ${users.map((u, i) => `<div class="person"><div class="pm"><div class="pe">${esc(u.email)}</div><div class="ps">${esc(personStatus(u))}</div></div>
+        <div class="pa">
+          ${u.lastSeen ? '' : `<button type="button" class="chk" data-act="invite" data-i="${i}">${u.invitedAt ? 'Надіслати ще раз' : 'Запросити'}</button>`}
+        </div></div>`).join('')}</section>`;
+  }
+  function wirePeople(m, rerender) {
+    document.querySelectorAll('.people [data-act]').forEach(b => b.onclick = () => {
+      const u = m.users[+b.dataset.i];
+      b.disabled = true; b.textContent = '…';
+      call('adminSendInvites', [u.email]).then(() => {
+        u.invitedAt = Date.now();
+        rerender(); updateInviteBar();
+      }).catch(e => { b.disabled = false; b.textContent = 'Помилка'; b.title = errText(e); });
+    });
+  }
+
+
+  // ---------- адмінка: усі служіння ----------
+  const adm = { list: [], sum: {}, filter: 'all', q: '', started: false, detail: null, opsFilter: 'all' };
+  const ADM_FILTERS = [['all', 'Усі'], ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['over', 'Перевищено'], ['noReport', 'Без звіту']];
+
+  function openAdmin() {
+    if (adm.started) return;
+    adm.started = true;
+    $('admFilters').innerHTML = ADM_FILTERS.map(([k, t]) => `<button type="button" data-f="${k}" class="${k === adm.filter ? 'on' : ''}">${t}</button>`).join('');
+    $('admFilters').onclick = ev => {
+      const b = ev.target.closest('button'); if (!b) return;
+      adm.filter = b.dataset.f;
+      $('admFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      renderAdmList();
+    };
+    $('admSearch').oninput = () => { adm.q = $('admSearch').value.trim().toLowerCase(); renderAdmList(); };
+    $('admMinistries').innerHTML = '<div class="empty">Завантаження служінь…</div>';
+    wireInviteAll();
+    call('adminListMinistries').then(list => {
+      adm.list = list; renderAdmList(); updateInviteBar();
+      let next = 0;
+      const worker = async () => {
+        while (next < list.length) {
+          const m = list[next++];
+          try { adm.sum[m.id] = await call('adminMinistrySummary', m.id); }
+          catch (e) { adm.sum[m.id] = { id: m.id, status: 'error', error: errText(e) }; }
+          renderAdmList();
+        }
+      };
+      Array.from({ length: 4 }, worker);
+    }).catch(e => { $('admMinistries').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`; });
+  }
+
+  function admMatches(m) {
+    const s = adm.sum[m.id];
+    if (adm.q && !(m.name + ' ' + m.responsible).toLowerCase().includes(adm.q)) return false;
+    switch (adm.filter) {
+      case 'noReceipt': return s && s.noReceipt > 0;
+      case 'unchecked': return s && s.unchecked > 0;
+      case 'over': return s && s.over > 0;
+      case 'noReport': return s && s.status !== 'ok';
+      default: return true;
+    }
+  }
+
+  function renderAdmList() {
+    if (adm.detail) return;
+    const loaded = adm.list.filter(m => adm.sum[m.id]);
+    const ok = loaded.map(m => adm.sum[m.id]).filter(s => s.status === 'ok');
+    const tot = k => ok.reduce((a, s) => a + (s[k] || 0), 0);
+    $('admKpis').innerHTML = [
+      ['Бюджет служінь', uah(tot('plan')), `${ok.length} зі звітом · ${loaded.length}/${adm.list.length} завантажено`],
+      ['Витрачено', uah(tot('spent')), tot('plan') ? `${Math.round(tot('spent') / tot('plan') * 100)}% бюджету` : '—'],
+      ['Без чека', String(tot('noReceipt')), 'витрат без фото чека', tot('noReceipt') ? 'owed' : ''],
+      ['Неперевірені', String(tot('unchecked')), 'операцій чекають звірки'],
+    ].map(([k, v, sub, cls]) => `<div class="kpi ${cls || ''}"><div class="k">${k}</div><b>${v}</b><div class="sub">${sub}</div></div>`).join('');
+
+    const rows = adm.list.filter(admMatches);
+    $('admMinistries').innerHTML = rows.length ? rows.map(m => {
+      const s = adm.sum[m.id];
+      let body;
+      if (!s) body = '<div class="badges"><span class="badge">завантаження…</span></div>';
+      else if (s.status === 'no-report') body = '<div class="badges"><span class="badge">звіт ще не створено</span></div>';
+      else if (s.status === 'no-access') body = '<div class="badges"><span class="badge warn">немає доступу до папки</span></div>';
+      else if (s.status === 'error') body = `<div class="badges"><span class="badge warn">${esc(s.error)}</span></div>`;
+      else {
+        const p = s.plan ? Math.min(100, s.spent / s.plan * 100) : 0;
+        body = `<div class="track"><div class="fill" style="width:${p.toFixed(1)}%;${s.over ? 'background:var(--err)' : ''}"></div></div>
+          <div class="badges">
+            ${s.noReceipt ? `<span class="badge warn">без чека: ${s.noReceipt}</span>` : ''}
+            ${s.unchecked ? `<span class="badge">неперевірено: ${s.unchecked}</span>` : (s.count ? '<span class="badge ok">усе перевірено</span>' : '')}
+            ${s.over ? `<span class="badge warn">▲ перевищено категорій: ${s.over}</span>` : ''}
+            ${s.count ? `<span class="badge">операцій: ${s.count}</span>` : '<span class="badge">операцій ще немає</span>'}
+          </div>`;
+      }
+      const sum = s && s.status === 'ok' ? `<span class="sum">${uah(s.spent)} / ${uah(s.plan)}</span>` : '';
+      return `<section class="card adm-row" data-id="${esc(m.id)}">
+        <div class="top"><div><div class="nm">${esc(m.name)}</div><div class="rp">${esc(m.responsible || '—')}</div></div>${sum}</div>${body}</section>`;
+    }).join('') : '<div class="empty">Нічого не знайдено</div>';
+    $('admMinistries').querySelectorAll('.adm-row').forEach(el => el.onclick = () => openAdmDetail(el.dataset.id));
+  }
+
+  function openAdmDetail(id) {
+    adm.detail = id; adm.opsFilter = 'all';
+    $('admList').classList.add('hidden');
+    $('admDetail').classList.remove('hidden');
+    const m = adm.list.find(x => x.id === id) || {};
+    $('admDetail').innerHTML = `<div class="adm-head"><button type="button" class="back" id="admBack">← Усі служіння</button></div>
+      <div class="card"><div class="empty">Завантаження «${esc(m.name || '')}»…</div></div>`;
+    $('admBack').onclick = closeAdmDetail;
+    window.scrollTo({ top: 0 });
+    call('adminMinistryDetail', id).then(d => {
+      if (adm.detail !== id) return;
+      adm.d = d; renderAdmDetail();
+      if (d.status !== 'no-report') adm.sum[id] = Object.assign({}, adm.sum[id], { status: 'ok', count: d.count, noReceipt: d.noReceipt, unchecked: d.unchecked });
+    }).catch(e => {
+      $('admDetail').querySelector('.card').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`;
+    });
+  }
+
+  function closeAdmDetail() {
+    adm.detail = null; adm.d = null;
+    $('admDetail').classList.add('hidden');
+    $('admList').classList.remove('hidden');
+    renderAdmList();
+  }
+
+  function renderAdmDetail() {
+    const d = adm.d;
+    if (d.status === 'no-report') {
+      $('admDetail').innerHTML = `<div class="adm-head"><button type="button" class="back" id="admBack">← Усі служіння</button></div>
+        <h2 style="font-size:22px;margin:0 0 2px;letter-spacing:-0.02em">${esc(d.name)}</h2>
+        <div class="rp" style="color:var(--muted);font-size:13px;margin-bottom:10px">${esc(d.responsible || '')}</div>
+        <div class="links"><a href="${esc(safeUrl(d.folderUrl))}" target="_blank" rel="noopener">Папка служіння ↗</a></div>
+        <section class="card">
+          <h2 style="font-size:16px;margin:0 0 6px">Звіт ще не створено</h2>
+          <p style="margin:0 0 14px;color:var(--muted);font-size:14px">${d.hasXlsx
+            ? 'Лідер ще не подавав витрат. Таблицю «Звіт 26-27» можна створити з «Звіт.xlsx» цього служіння — або вона зʼявиться сама, коли лідер подасть першу витрату.'
+            : 'У папці служіння немає «Звіт.xlsx», тож створити звіт неможливо.'}</p>
+          ${d.hasXlsx ? '<button type="button" id="admCreate" style="width:auto;padding:11px 18px">Створити «Звіт 26-27» з Звіт.xlsx</button>' : ''}
+          <div class="msg" id="admCreateMsg"></div>
+        </section>${peopleHtml(adm.list.find(x => x.id === d.id))}`;
+      $('admBack').onclick = closeAdmDetail;
+      wirePeople(adm.list.find(x => x.id === d.id), renderAdmDetail);
+      if ($('admCreate')) $('admCreate').onclick = () => {
+        $('admCreate').disabled = true; $('admCreate').textContent = 'Створюю…';
+        call('adminCreateReport', d.id).then(nd => { adm.d = nd; adm.sum[d.id] = Object.assign({}, adm.sum[d.id], { status: 'ok' }); renderAdmDetail(); })
+          .catch(e => { $('admCreate').disabled = false; $('admCreate').textContent = 'Створити «Звіт 26-27» з Звіт.xlsx'; showMsg($('admCreateMsg'), 'err', errText(e)); });
+      };
+      return;
+    }
+    const plan = d.categories.reduce((a, c) => a + c.plan, 0), spent = d.categories.reduce((a, c) => a + c.spent, 0);
+    const bal = d.balance ? d.balance.amount : null;
+    const kpis = [
+      ['Бюджет', uah(plan), `${d.categories.length} категорій`],
+      ['Витрачено', uah(spent), plan ? `${Math.round(spent / plan * 100)}% бюджету` : '—'],
+      bal !== null && bal < 0 ? ['До відшкодування', uah(-bal), d.balance.month, 'owed'] : ['На руках', bal === null ? '—' : uah(bal), d.balance ? d.balance.month : ''],
+      ['Без чека', String(d.noReceipt), `неперевірено: ${d.unchecked}`, d.noReceipt ? 'owed' : ''],
+    ].map(([k, v, sub, cls]) => `<div class="kpi ${cls || ''}"><div class="k">${k}</div><b>${v}</b><div class="sub">${esc(sub)}</div></div>`).join('');
+    const cats = d.categories.map(c => {
+      const p = c.plan ? c.spent / c.plan * 100 : 0, over = c.spent > c.plan;
+      return `<div class="cat${over ? ' over' : ''}"><div class="cat-top"><span class="cat-name">${esc(c.name.trim())}</span>
+        <span class="cat-val">${uah(c.spent)} / ${uah(c.plan)}</span></div>
+        <div class="track"><div class="fill" style="width:${Math.min(100, p).toFixed(1)}%"></div></div>
+        ${over ? `<div class="over-tag">▲ перевищено на ${uah(c.spent - c.plan)}</div>` : ''}</div>`;
+    }).join('') || '<div class="empty">Немає категорій</div>';
+    const F = [['all', 'Усі'], ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['checked', 'Перевірені']];
+    $('admDetail').innerHTML = `<div class="adm-head"><button type="button" class="back" id="admBack">← Усі служіння</button></div>
+      <h2 style="font-size:22px;margin:0 0 2px;letter-spacing:-0.02em">${esc(d.name)}</h2>
+      <div class="rp" style="color:var(--muted);font-size:13px;margin-bottom:10px">${esc(d.responsible || '')}${d.emails ? ' · ' + esc(d.emails) : ''}</div>
+      <div class="links">
+        <a href="${esc(safeUrl(d.reportUrl))}" target="_blank" rel="noopener">Відкрити звіт ↗</a>
+        <a href="${esc(safeUrl(d.receiptsUrl))}" target="_blank" rel="noopener">Папка чеків ↗</a>
+      </div>
+      <div class="kpis">${kpis}</div>
+      <section class="card"><div class="sec-head"><h2>По категоріях</h2><span class="hint">витрачено / бюджет</span></div>${cats}</section>
+      <section class="card">
+        <div class="sec-head"><h2>Операції</h2><span class="hint">${d.count} за рік</span></div>
+        <div class="ministries" id="opsFilters" style="margin-bottom:6px">${F.map(([k, t]) => `<button type="button" data-f="${k}" class="${k === adm.opsFilter ? 'on' : ''}">${t}</button>`).join('')}</div>
+        <div id="admOps"></div>
+      </section>`;
+    $('admBack').onclick = closeAdmDetail;
+    $('admDetail').insertAdjacentHTML('beforeend', peopleHtml(adm.list.find(x => x.id === d.id)));
+    wirePeople(adm.list.find(x => x.id === d.id), renderAdmDetail);
+    $('opsFilters').onclick = ev => {
+      const b = ev.target.closest('button'); if (!b) return;
+      adm.opsFilter = b.dataset.f;
+      $('opsFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      renderAdmOps();
+    };
+    renderAdmOps();
+  }
+
+  function renderAdmOps() {
+    const d = adm.d;
+    const ops = d.ops.filter(o => {
+      const nr = o.expense > 0 && !o.receipt;
+      return adm.opsFilter === 'noReceipt' ? nr : adm.opsFilter === 'unchecked' ? !o.checked : adm.opsFilter === 'checked' ? !!o.checked : true;
+    });
+    const icoExp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+    const icoInc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+    $('admOps').innerHTML = ops.length ? ops.map((o, i) => {
+      const inc = o.income > 0 && !o.expense, nr = o.expense > 0 && !o.receipt;
+      const title = inc ? (o.description || 'Аванс') : (o.description || o.category || 'Витрата');
+      const sub = [o.date ? dmy(o.date) : '', inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ')
+        + (nr ? ` · <b>без чека${o.noReceiptReason ? ': ' + esc(o.noReceiptReason) : ''}</b>` : '');
+      const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>` : '';
+      const idx = d.ops.indexOf(o);
+      return `<div class="op${nr ? ' nr' : ''}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? icoInc : icoExp}</div>
+        <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div>
+          <button type="button" class="chk${o.checked ? ' on' : ''}" data-i="${idx}" title="${esc(o.checked)}">${o.checked ? '✓ Перевірено' : 'Позначити перевіреним'}</button></div>
+        <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
+    }).join('') : '<div class="empty">Немає операцій</div>';
+    $('admOps').querySelectorAll('.chk').forEach(b => b.onclick = () => {
+      const o = d.ops[+b.dataset.i], want = !o.checked;
+      b.disabled = true; b.textContent = 'Зберігаю…';
+      call('adminSetChecked', d.id, o.month, o.row, want).then(r => {
+        o.checked = r.checked;
+        d.unchecked = d.ops.filter(x => !x.checked).length;
+        if (adm.sum[d.id]) adm.sum[d.id].unchecked = d.unchecked;
+        renderAdmOps();
+      }).catch(e => { b.disabled = false; b.textContent = 'Помилка — ще раз'; b.title = errText(e); });
+    });
+  }
+
+  // ---------- cards ----------
+  function addCard(files, advance) {
+    const el = $('cardTpl').content.firstElementChild.cloneNode(true);
+    const card = { el, files: [], advance: false };
+    const prev = cards[cards.length - 1];
+    el.querySelector('.date').min = limits.min;
+    el.querySelector('.date').max = limits.max;
+    setupDate(el, prev ? prev.el.querySelector('.date').value : todayIso());
+
+    el.querySelector('.remove').onclick = () => {
+      cards.splice(cards.indexOf(card), 1); el.remove(); renumber();
+    };
+    el.querySelector('.file').onchange = async ev => {
+      await addFiles(card, [...ev.target.files]); ev.target.value = '';
+    };
+    el.querySelector('.noReceipt').onchange = ev => {
+      el.querySelector('.receipt').classList.toggle('hidden', ev.target.checked);
+      el.querySelector('.reasonBlock').classList.toggle('hidden', !ev.target.checked);
+    };
+    el.querySelector('.category').onchange = () => showLeft(card);
+    el.querySelector('.segExp').onclick = () => setAdvance(card, false);
+    el.querySelector('.segAdv').onclick = () => setAdvance(card, true);
+    if (advance) setAdvance(card, true);
+
+    cards.push(card);
+    $('cards').appendChild(el);
+    fillCategories(card);
+    renumber();
+    if (files) addFiles(card, files);
+    return card;
+  }
+
+  // ---------- дата дд.мм.рррр (вбудоване поле показує формат мови браузера) ----------
+  const toUa = iso => iso ? iso.split('-').reverse().join('.') : '';
+
+  function parseUa(text) {
+    const m = String(text).trim().match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2}|\d{4})$/);
+    if (!m) return '';
+    const d = +m[1], mo = +m[2], y = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+    const dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return '';
+    return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+
+  function setupDate(el, iso) {
+    const text = el.querySelector('.dateText'), native = el.querySelector('.date');
+    native.value = iso || ''; text.value = toUa(iso);
+    native.onchange = () => { text.value = toUa(native.value); };
+    text.oninput = ev => {
+      // Автоматично ставимо крапки: 13102026 → 13.10.2026
+      if (ev.inputType && ev.inputType.startsWith('delete')) { native.value = parseUa(text.value); return; }
+      const digits = text.value.replace(/\D/g, '').slice(0, 8);
+      if (/^\d+$/.test(text.value.replace(/\./g, ''))) {
+        text.value = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)].filter(Boolean).join('.');
+      }
+      native.value = parseUa(text.value);
+    };
+  }
+
+  function dateOf(card) {
+    const text = card.el.querySelector('.dateText').value.trim();
+    if (!text) return '';
+    const iso = parseUa(text);
+    if (!iso) throw new Error('Дата має бути у форматі дд.мм.рррр, напр. 13.10.2026.');
+    return iso;
+  }
+
+  function setAdvance(card, on) {
+    card.advance = on;
+    card.el.classList.toggle('is-advance', on);
+    card.el.querySelector('.segExp').classList.toggle('on', !on);
+    card.el.querySelector('.segAdv').classList.toggle('on', on);
+    renumber();
+  }
+
+  function renumber() {
+    cards.forEach((c, i) => {
+      const kind = c.advance ? 'Аванс' : 'Витрата';
+      c.el.querySelector('.title').textContent = cards.length > 1 ? `${i + 1}. ${kind}` : kind;
+      c.el.querySelector('.remove').classList.toggle('hidden', cards.length < 2);
+    });
+    updateSubmit();
+  }
+
+  function updateSubmit() {
+    const b = $('submitAll');
+    b.disabled = busy || !categories.length || !cards.length;
+    if (!busy) b.textContent = cards.length > 1 ? `Надіслати все (${cards.length})` : 'Надіслати';
+  }
+
+  $('addCard').onclick = () => { const c = addCard(); c.el.scrollIntoView({ behavior: 'smooth' }); };
+  $('addAdvance').onclick = () => {
+    const first = cards[0];
+    const c = cards.length === 1 && isEmpty(first) ? first : addCard();
+    setAdvance(c, true);
+    c.el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Кілька фото → кожне окрема витрата. Порожню першу картку використовуємо під перше фото.
+  $('bulkBtn').onclick = () => $('bulkFiles').click();
+  $('bulkFiles').onchange = ev => {
+    const files = [...ev.target.files]; ev.target.value = '';
+    if (!files.length) return;
+    files.forEach((f, i) => {
+      const first = cards[0];
+      if (i === 0 && cards.length === 1 && isEmpty(first) && !first.advance) addFiles(first, [f]);
+      else addCard([f]);
+    });
+  };
+
+  function isEmpty(card) {
+    const q = s => card.el.querySelector(s).value;
+    return !card.files.length && !q('.amount') && !q('.description') && !q('.vendor');
+  }
+
+  // ---------- photos ----------
+  async function addFiles(card, files) {
+    const lbl = card.el.querySelector('.addText');
+    if (lbl) lbl.textContent = 'Обробка фото…';
+    for (const f of files) {
+      try {
+        card.files.push(isImage(f) ? await compressImage(f) : await readRaw(f));
+      } catch (e) { /* пропускаємо файл, який не прочитався */ }
+    }
+    renderPhotos(card);
+  }
+
+  function renderPhotos(card) {
+    const box = card.el.querySelector('.photos');
+    box.querySelectorAll('.thumb').forEach(t => t.remove());
+    const add = box.querySelector('.add-photo');
+    card.files.forEach((f, i) => {
+      const t = document.createElement('div'); t.className = 'thumb';
+      if (f.preview) { const img = document.createElement('img'); img.src = f.preview; t.appendChild(img); }
+      else { const p = document.createElement('div'); p.className = 'pdf'; p.textContent = '📄 ' + f.name; t.appendChild(p); }
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×';
+      x.onclick = () => { card.files.splice(i, 1); renderPhotos(card); };
+      t.appendChild(x);
+      box.insertBefore(t, add);
+    });
+    add.querySelector('.addText').textContent = card.files.length ? 'Ще фото' : 'Фото чека';
+  }
+
+  function readRaw(f) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res({ name: f.name, mimeType: f.type || 'application/octet-stream', base64: r.result.split(',')[1] });
+      r.onerror = rej; r.readAsDataURL(f);
+    });
+  }
+
+  // Зменшуємо фото до 1600px — текст чека читається, а файл легкий і швидко вантажиться.
+  const isHeic = f => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+  const isImage = f => f.type.startsWith('image/') || isHeic(f);
+
+  let heicLib = null;
+  function loadHeic() {
+    heicLib = heicLib || new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+      sc.onload = () => res(window.heic2any); sc.onerror = rej;
+      document.head.appendChild(sc);
+    });
+    return heicLib;
+  }
+
+  /** Фото → JPEG ≤1600 px. HEIC (iPhone) спершу конвертуємо, бо Chrome його не відкриває. */
+  async function compressImage(f) {
+    if (isHeic(f)) {
+      try {
+        const heic2any = await loadHeic();
+        const out = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.9 });
+        const jpg = Array.isArray(out) ? out[0] : out;
+        f = new File([jpg], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+      } catch (e) { /* не вдалося — спробуємо як є (Safari відкриває HEIC сам) */ }
+    }
+    return compressCanvas(f);
+  }
+
+  function compressCanvas(f) {
+    return new Promise(res => {
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        const dataUrl = cv.toDataURL('image/jpeg', 0.8);
+        URL.revokeObjectURL(url);
+        res({ name: f.name.replace(/\.[^.]+$/, '') + '.jpg', mimeType: 'image/jpeg', base64: dataUrl.split(',')[1], preview: dataUrl });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); readRaw(f).then(res); }; // не відкрилось — шлемо як є
+      img.src = url;
+    });
+  }
+
+  // ---------- submit ----------
+  function payloadOf(card) {
+    const q = s => card.el.querySelector(s);
+    if (card.advance) {
+      return { type: 'advance', ministryId: $('ministry').value, date: dateOf(card),
+        amount: q('.amount').value, description: q('.advNote').value };
+    }
+    const hasReceipt = !q('.noReceipt').checked;
+    return {
+      type: 'expense',
+      ministryId: $('ministry').value,
+      date: dateOf(card),
+      amount: q('.amount').value,
+      category: q('.category').value,
+      description: q('.description').value,
+      vendor: q('.vendor').value,
+      hasReceipt,
+      noReceiptReason: q('.reason').value,
+      files: hasReceipt ? card.files.map(({ name, mimeType, base64 }) => ({ name, mimeType, base64 })) : [],
+    };
+  }
+
+  function call(fn, ...args) {
+    return new Promise((res, rej) =>
+      api.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+  }
+
+  $('submitAll').onclick = async () => {
+    clearMsg($('msg'));
+    busy = true; updateSubmit();
+    const queue = [];
+    let failed = 0;
+    cards.forEach(card => {
+      const m = card.el.querySelector('.cardMsg'); clearMsg(m);
+      try { queue.push({ card, payload: payloadOf(card) }); } catch (e) { failed++; showMsg(m, 'err', errText(e)); }
+    });
+
+    let ok = 0, last = null, timing = null;
+    const tStart = performance.now();
+    const done = (card, r) => {
+      if (r.error) { failed++; showMsg(card.el.querySelector('.cardMsg'), 'err', r.error); return; }
+      ok++; last = r;
+      cards.splice(cards.indexOf(card), 1);
+      card.el.remove();
+    };
+    const size = queue.reduce((a, q) => a + (q.payload.files || []).reduce((b, f) => b + f.base64.length, 0), 0);
+
+    // Великі фото (напр. HEIC з iPhone) — напряму в Google Диск, повз повільний Apps Script.
+    if (queue.length && size > 400e3) {
+      try {
+        await directUpload(queue);
+      } catch (e) { /* не вийшло — надішлемо через сервер, як раніше */ }
+    }
+
+    if (queue.length && queue.reduce((a, q) => a + (q.payload.files || []).reduce((b, f) => b + f.base64.length, 0), 0) < 12e6) {
+      // Швидкий шлях: фото й рядки — одним запитом.
+      $('submitAll').textContent = queue.length > 1 ? `Надсилаю ${queue.length}…` : 'Надсилаю…';
+      try {
+        const base = queue.length > 1 ? `Надсилаю ${queue.length}…` : 'Надсилаю…';
+        const res = await callApi('submitExpenses', [$('ministry').value, queue.map(q => q.payload)], p => {
+          $('submitAll').textContent = p < 0.99 ? `${base} ${Math.round(p * 100)}%` : 'Записую у звіт…';
+        });
+        timing = res.timing || null;
+        res.results.forEach((r, i) => done(queue[i].card, r || { error: 'Не вдалося записати.' }));
+      } catch (e) {
+        failed += queue.length;
+        queue.forEach(({ card }) => showMsg(card.el.querySelector('.cardMsg'), 'err', errText(e)));
+      }
+    } else if (queue.length) {
+      // Багато фото: спершу чеки по 3 паралельно, потім усі рядки одним записом.
+      const slots = new Array(queue.length);
+      let next = 0, up = 0;
+      const label = () => { $('submitAll').textContent = `Завантажую чеки ${up} з ${queue.length}…`; };
+      label();
+      const worker = async () => {
+        while (next < queue.length) {
+          const i = next++, { card, payload } = queue[i];
+          try { slots[i] = { card, item: await call('prepareExpense', payload) }; }
+          catch (e) { failed++; showMsg(card.el.querySelector('.cardMsg'), 'err', errText(e)); }
+          up++; label();
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, queue.length) }, worker));
+      const prepared = slots.filter(Boolean); // порядок рядків = порядок карток
+      if (prepared.length) {
+        $('submitAll').textContent = 'Записую у звіт…';
+        try {
+          const res = await call('writeExpenses', $('ministry').value, prepared.map(p => p.item));
+          res.results.forEach((r, i) => done(prepared[i].card, r.error
+            ? { error: r.error + ' Фото вже збережено — не додавайте їх повторно, повідомте відповідального.' } : r));
+        } catch (e) {
+          failed += prepared.length;
+          prepared.forEach(({ card }) => showMsg(card.el.querySelector('.cardMsg'), 'err', 'Не вдалося записати у звіт: ' + errText(e)));
+        }
+      }
+    }
+
+    busy = false;
+    if (failed) {
+      showMsg($('msg'), 'err', `Записано: ${ok}. Не вдалося: ${failed} — виправте позначені картки й натисніть «Надіслати» ще раз.`);
+      if (cards[0]) cards[0].el.scrollIntoView({ behavior: 'smooth' });
+    } else if (last) {
+      const urls = (last.receiptUrls || []).map(safeUrl).filter(Boolean);
+      const links = urls.map((u, j) => `<a href="${esc(u)}" target="_blank" rel="noopener">чек${urls.length > 1 ? ' ' + (j + 1) : ''}</a>`).join(', ');
+      showMsg($('msg'), 'ok', ok > 1
+        ? `✅ Записано ${ok} у звіт.`
+        : `✅ ${last.advance ? 'Аванс записано' : 'Записано'}: «${last.month}», рядок ${last.row}${links ? ' · ' + links : ''}`);
+      // Секундомір: де витрачається час (тимчасово, для оптимізації).
+      const sec = ms => (ms / 1000).toLocaleString('uk-UA', { maximumFractionDigits: 1 });
+      const total = performance.now() - tStart;
+      const t = timing ? ` · сервер ${sec(timing.server)} с (фото ${sec(timing.photos)} · звіт ${sec(timing.report)} · решта ${sec(timing.server - timing.photos - timing.report)})` : '';
+      $('msg').insertAdjacentHTML('beforeend', `<div style="font-size:12px;opacity:.7;margin-top:4px">⏱ усього ${sec(total)} с${t}</div>`);
+      addCard();
+    }
+    renumber();
+    if (ok) refreshInfo(); // баланс і аналітика — у фоні, не затримуючи повідомлення
+  };
+
+  /** Фото → одноразові сесії завантаження Google Диска → браузер надсилає файли напряму. */
+  async function directUpload(queue) {
+    const withFiles = queue.filter(q => (q.payload.files || []).length);
+    if (!withFiles.length) return;
+    $('submitAll').textContent = 'Готую завантаження…';
+    const metas = withFiles.map(({ payload: p }) => ({
+      date: p.date, category: p.category, amount: p.amount, vendor: p.vendor, description: p.description,
+      files: p.files.map(f => ({ name: f.name, mimeType: f.mimeType, size: Math.floor(f.base64.length * 3 / 4) - (f.base64.endsWith('==') ? 2 : f.base64.endsWith('=') ? 1 : 0) })),
+    }));
+    const sessions = await callApi('startUploads', [$('ministry').value, metas]);
+    const jobs = [];
+    withFiles.forEach((q, i) => q.payload.files.forEach((f, j) => jobs.push({ q, f, url: sessions[i].uploads[j].url, j })));
+    const total = jobs.reduce((a, x) => a + x.f.base64.length, 0);
+    const sent = new Array(jobs.length).fill(0);
+    const label = () => { $('submitAll').textContent = `Завантажую фото… ${Math.round(sent.reduce((a, b) => a + b, 0) / total * 100)}%`; };
+    const links = await Promise.all(jobs.map((job, k) => new Promise((res, rej) => {
+      const bin = atob(job.f.base64), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', job.url);
+      xhr.setRequestHeader('Content-Type', job.f.mimeType || 'application/octet-stream');
+      xhr.upload.onprogress = ev => { if (ev.lengthComputable) { sent[k] = ev.loaded / ev.total * job.f.base64.length; label(); } };
+      xhr.onload = () => {
+        try {
+          const r = JSON.parse(xhr.responseText);
+          if (xhr.status >= 300 || !r.id) throw new Error();
+          res(r.webViewLink || `https://drive.google.com/file/d/${r.id}/view`);
+        } catch (e) { rej(new Error('Не вдалося завантажити фото.')); }
+      };
+      xhr.onerror = () => rej(new Error('Не вдалося завантажити фото.'));
+      xhr.send(bytes);
+    })));
+    // Фото вже на Диску: далі на сервер ідуть лише посилання.
+    jobs.forEach((job, k) => {
+      job.q.payload.receiptUrls = job.q.payload.receiptUrls || [];
+      job.q.payload.receiptUrls[job.j] = links[k];
+    });
+    withFiles.forEach(q => { q.payload.files = []; });
+  }
+
+  function refreshInfo() {
+    api.run.withSuccessHandler(applyInfo).withFailureHandler(() => {}).getCategories($('ministry').value);
+  }
+
+</script>
+</body>
+</html>
