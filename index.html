@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-blIMWsmxmCXCUUKdR5m4QRQt3p0J5e1B+0N4jdJLCKk='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-3a2kCf4JXfXIzl1HqsUIDsSHN8L3KWfNH49KhElgKyI='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex">
   <meta name="referrer" content="strict-origin">
@@ -306,6 +306,13 @@
     .badge { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
     .badge.warn { background: var(--err-bg); color: var(--err); }
     .badge.ok { background: var(--ok-bg); color: var(--ok); }
+    .badge-link { width: auto; border: 0; box-shadow: none; cursor: pointer; font-family: inherit; line-height: inherit; }
+    .badge-link:hover { filter: brightness(1.15); text-decoration: underline; text-underline-offset: 2px; }
+    .kpi-link { cursor: pointer; transition: border-color .15s, background .15s; }
+    .kpi-link:hover { border-color: var(--border-strong); }
+    .kpi-link.on { border-color: var(--text); }
+    .kpi-link .go { color: var(--faint); font-weight: 400; }
+    .kpi-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .adm-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .adm-head h2 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
     .back { width: auto; padding: 6px 12px; font-size: 14px; font-weight: 500; border-radius: 999px;
@@ -1380,18 +1387,25 @@
 
   // ---------- адмінка: усі служіння ----------
   const adm = { list: [], sum: {}, filter: 'all', q: '', started: false, detail: null, opsFilter: 'all' };
-  const ADM_FILTERS = [['all', 'Усі'], ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['over', 'Перевищено'], ['noReport', 'Без звіту']];
+  const ADM_FILTERS = [['all', 'Усі'], ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['unreimbursed', 'Не відшкодовані'], ['over', 'Перевищено'], ['noReport', 'Без звіту']];
 
   function openAdmin() {
     if (adm.started) return;
     adm.started = true;
     $('admFilters').innerHTML = ADM_FILTERS.map(([k, t]) => `<button type="button" data-f="${k}" class="${k === adm.filter ? 'on' : ''}">${t}</button>`).join('');
     $('admFilters').onclick = ev => {
-      const b = ev.target.closest('button'); if (!b) return;
-      adm.filter = b.dataset.f;
-      $('admFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-      renderAdmList();
+      const b = ev.target.closest('button'); if (b) setAdmFilter(b.dataset.f);
     };
+    // Плитки «Без чека» / «Неперевірені» — фільтр списку служінь (повторний клік — усі).
+    const kpiClick = ev => {
+      const k = ev.target.closest('.kpi[data-f]'); if (!k) return;
+      if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+      ev.preventDefault();
+      setAdmFilter(adm.filter === k.dataset.f ? 'all' : k.dataset.f);
+      $('admFilters').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+    $('admKpis').onclick = kpiClick;
+    $('admKpis').onkeydown = kpiClick;
     $('admListCsv').onclick = () => downloadCsv(`Зведення служінь ${today()}.csv`,
       ['Служіння', 'Відповідальний', 'Бюджет, грн', 'Витрачено, грн', 'Залишок, грн', 'На руках / до відшкодування, грн', 'Операцій',
         'Без чека', 'Неперевірені', 'Не відшкодовані', 'Перевищено категорій', 'Стан'],
@@ -1420,12 +1434,19 @@
     }).catch(e => { $('admMinistries').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`; });
   }
 
+  function setAdmFilter(f) {
+    adm.filter = f;
+    $('admFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.f === f));
+    renderAdmList();
+  }
+
   function admMatches(m) {
     const s = adm.sum[m.id];
     if (adm.q && !(m.name + ' ' + m.responsible).toLowerCase().includes(adm.q)) return false;
     switch (adm.filter) {
       case 'noReceipt': return s && s.noReceipt > 0;
       case 'unchecked': return s && s.unchecked > 0;
+      case 'unreimbursed': return s && s.unreimbursed > 0;
       case 'over': return s && s.over > 0;
       case 'noReport': return s && s.status !== 'ok';
       default: return true;
@@ -1440,9 +1461,11 @@
     $('admKpis').innerHTML = [
       ['Бюджет служінь', uah(tot('plan')), `${ok.length} зі звітом · ${loaded.length}/${adm.list.length} завантажено`],
       ['Витрачено', uah(tot('spent')), tot('plan') ? `${Math.round(tot('spent') / tot('plan') * 100)}% бюджету` : '—'],
-      ['Без чека', String(tot('noReceipt')), 'витрат без фото чека', tot('noReceipt') ? 'owed' : ''],
-      ['Неперевірені', String(tot('unchecked')), 'операцій чекають звірки'],
-    ].map(([k, v, sub, cls]) => `<div class="kpi ${cls || ''}"><div class="k">${k}</div><b>${v}</b><div class="sub">${sub}</div></div>`).join('');
+      ['Без чека', String(tot('noReceipt')), 'витрат без фото чека', tot('noReceipt') ? 'owed' : '', 'noReceipt'],
+      ['Неперевірені', String(tot('unchecked')), 'операцій чекають звірки', '', 'unchecked'],
+    ].map(([k, v, sub, cls, f]) => f
+      ? `<div class="kpi kpi-link ${cls || ''}${adm.filter === f ? ' on' : ''}" data-f="${f}" role="button" tabindex="0" aria-pressed="${adm.filter === f}" title="Показати служіння: ${k.toLowerCase()}"><div class="k">${k} <span class="go">→</span></div><b>${v}</b><div class="sub">${sub}</div></div>`
+      : `<div class="kpi ${cls || ''}"><div class="k">${k}</div><b>${v}</b><div class="sub">${sub}</div></div>`).join('');
 
     const rows = adm.list.filter(admMatches);
     $('admMinistries').innerHTML = rows.length ? rows.map(m => {
@@ -1456,10 +1479,10 @@
         const p = s.plan ? Math.min(100, s.spent / s.plan * 100) : 0;
         body = `<div class="track"><div class="fill" style="width:${p.toFixed(1)}%;${s.over ? 'background:var(--err)' : ''}"></div></div>
           <div class="badges">
-            ${s.noReceipt ? `<span class="badge warn">без чека: ${s.noReceipt}</span>` : ''}
-            ${s.unchecked ? `<span class="badge">неперевірено: ${s.unchecked}</span>` : (s.count ? '<span class="badge ok">усе перевірено</span>' : '')}
+            ${s.noReceipt ? `<button type="button" class="badge warn badge-link" data-of="noReceipt">без чека: ${s.noReceipt}</button>` : ''}
+            ${s.unchecked ? `<button type="button" class="badge badge-link" data-of="unchecked">неперевірено: ${s.unchecked}</button>` : (s.count ? '<span class="badge ok">усе перевірено</span>' : '')}
             ${s.over ? `<span class="badge warn">▲ перевищено категорій: ${s.over}</span>` : ''}
-            ${s.unreimbursed ? `<span class="badge">не відшкодовано: ${s.unreimbursed}</span>` : ''}
+            ${s.unreimbursed ? `<button type="button" class="badge badge-link" data-of="unreimbursed">не відшкодовано: ${s.unreimbursed}</button>` : ''}
             ${s.count ? `<span class="badge">операцій: ${s.count}</span>` : '<span class="badge">операцій ще немає</span>'}
           </div>`;
       }
@@ -1467,11 +1490,14 @@
       return `<section class="card adm-row" data-id="${esc(m.id)}">
         <div class="top"><div><div class="nm">${esc(m.name)}</div><div class="rp">${esc(m.responsible || '—')}</div></div>${sum}</div>${body}</section>`;
     }).join('') : '<div class="empty">Нічого не знайдено</div>';
-    $('admMinistries').querySelectorAll('.adm-row').forEach(el => el.onclick = () => openAdmDetail(el.dataset.id));
+    $('admMinistries').querySelectorAll('.adm-row').forEach(el => el.onclick = ev => {
+      const b = ev.target.closest('[data-of]'); // бейдж — одразу до потрібних операцій служіння
+      openAdmDetail(el.dataset.id, b ? b.dataset.of : 'all');
+    });
   }
 
-  function openAdmDetail(id) {
-    adm.detail = id; adm.opsFilter = 'all';
+  function openAdmDetail(id, opsFilter) {
+    adm.detail = id; adm.opsFilter = opsFilter || 'all';
     $('admList').classList.add('hidden');
     $('admDetail').classList.remove('hidden');
     const m = adm.list.find(x => x.id === id) || {};
@@ -1525,8 +1551,11 @@
       ['Бюджет', uah(plan), `${d.categories.length} категорій`],
       ['Витрачено', uah(spent), plan ? `${Math.round(spent / plan * 100)}% бюджету` : '—'],
       bal !== null && bal < 0 ? ['До відшкодування', uah(-bal), d.balance.month, 'owed'] : ['На руках', bal === null ? '—' : uah(bal), d.balance ? d.balance.month : ''],
-      ['Без чека', String(d.noReceipt), `неперевірено: ${d.unchecked}`, d.noReceipt ? 'owed' : ''],
-    ].map(([k, v, sub, cls]) => `<div class="kpi ${cls || ''}"><div class="k">${k}</div><b>${v}</b><div class="sub">${esc(sub)}</div></div>`).join('');
+    ].map(([k, v, sub, cls]) => `<div class="kpi ${cls || ''}"><div class="k">${k}</div><b>${v}</b><div class="sub">${esc(sub)}</div></div>`).join('')
+      // «Без чека» і «неперевірено» — фільтри операцій нижче
+      + `<div class="kpi kpi-link ${d.noReceipt ? 'owed' : ''}" data-of="noReceipt" role="button" tabindex="0" title="Показати витрати без чека">
+          <div class="k">Без чека <span class="go">→</span></div><b>${d.noReceipt}</b>
+          <div class="sub"><button type="button" class="badge badge-link" data-of="unchecked">неперевірено: ${d.unchecked} →</button></div></div>`;
     const cats = d.categories.map(c => {
       const p = c.plan ? c.spent / c.plan * 100 : 0, over = c.spent > c.plan;
       return `<div class="cat${over ? ' over' : ''}"><div class="cat-top"><span class="cat-name">${esc(c.name.trim())}</span>
@@ -1563,6 +1592,17 @@
       $('opsFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
       renderAdmOps();
     };
+    const pickOps = ev => {
+      const t = ev.target.closest('[data-of]'); if (!t) return;
+      if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+      ev.preventDefault(); ev.stopPropagation();
+      adm.opsFilter = adm.opsFilter === t.dataset.of ? 'all' : t.dataset.of;
+      $('opsFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.f === adm.opsFilter));
+      renderAdmOps();
+      $('admOps').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    $('admDetail').querySelector('.kpis').onclick = pickOps;
+    $('admDetail').querySelector('.kpis').onkeydown = pickOps;
     renderAdmOps();
   }
 
