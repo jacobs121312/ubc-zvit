@@ -2,8 +2,10 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-KAhcQ60BFXwTUXHXQPkERhdONcrSbtDHZxbNkw9Izfk=' 'sha256-D8Vboukt9brer1/n5In/99ZNB+ByAhODMpd8fv4thbU='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex">
+  <meta name="referrer" content="strict-origin">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -624,8 +626,8 @@
     CLIENT_ID: '179473446982-arfkrdps29phumqufgrkhh45oaq32d5l.apps.googleusercontent.com',
   };
 
-  // Вхід: або Google ID token (~1 год, лише ця вкладка), або сесія після пароля (30 днів, цей пристрій).
-  let auth = null; // { kind: 'google'|'session', token, exp }
+  // Вхід: Google ID token (~1 год, лише ця вкладка).
+  let auth = null; // { kind: 'google', token, exp }
   let tokenWaiters = [];
   try {
     auth = JSON.parse(localStorage.getItem('auth') || 'null') || JSON.parse(sessionStorage.getItem('auth') || 'null');
@@ -640,7 +642,7 @@
     auth = a;
     try {
       localStorage.removeItem('auth'); sessionStorage.removeItem('auth');
-      if (a) (a.kind === 'session' ? localStorage : sessionStorage).setItem('auth', JSON.stringify(a));
+      if (a) sessionStorage.setItem('auth', JSON.stringify(a));
     } catch (e) {}
   }
 
@@ -660,6 +662,13 @@
   function onCredential(resp) {
     signedIn({ kind: 'google', token: resp.credential, exp: jwtExp(resp.credential) });
   }
+
+  // За кілька хвилин до кінця дії входу пропонуємо Google оновити його (One Tap),
+  // не ховаючи форму — щоб заповнені картки не губилися.
+  setInterval(() => {
+    if (!auth || !gisReady || auth.exp - Date.now() > 5 * 60000 || auth.exp - Date.now() < 60000) return;
+    try { google.accounts.id.prompt(); } catch (e) {}
+  }, 60000);
 
   let gisReady = false;
   function initGis() {
@@ -688,6 +697,8 @@
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', APP.API_URL);
+      xhr.timeout = 180000; // повтор безпечний: сервер не запише ту саму картку двічі
+      xhr.ontimeout = () => reject(new Error('Сервер довго не відповідає — можливо, слабкий звʼязок. Спробуйте ще раз.'));
       xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8'); // без preflight-запиту
       if (onProgress) xhr.upload.onprogress = ev => { if (ev.lengthComputable) onProgress(ev.loaded / ev.total); };
       xhr.onload = () => {
@@ -704,7 +715,7 @@
   async function callApi(fn, args, onProgress) {
     const a = await getAuth();
     try {
-      return await post({ fn, args, token: a.token, kind: a.kind }, onProgress);
+      return await post({ fn, args, token: a.token }, onProgress);
     } catch (e) {
       if (e.auth) saveAuth(null);
       throw e;
@@ -712,7 +723,6 @@
   }
 
   const authMsg = (type, text) => { const m = document.getElementById('authMsg'); m.className = 'msg ' + type; m.textContent = text; };
-  function setAuthStep() {} // сумісність: кроків входу більше немає
 
   // Посилання із запрошення (?email=…) — підказка Google, яким акаунтом входити.
   let loginHint = '';
@@ -728,11 +738,21 @@
       const p = new Proxy({}, { get(_, k) {
         if (k === 'withSuccessHandler') return f => { h.ok = f; return p; };
         if (k === 'withFailureHandler') return f => { h.err = f; return p; };
-        return (...args) => { callApi(k, args).then(r => h.ok && h.ok(r), e => h.err && h.err(e)); };
+        return (...args) => {
+          callApi(k, args).then(r => h.ok && h.ok(r), e => h.err && h.err(e)).catch(reportBug);
+        };
       } });
       return p;
     },
   };
+
+  /** Збій у коді сторінки — не «зависаємо» мовчки, а кажемо, що робити. */
+  function reportBug(e) {
+    console.error(e);
+    const m = document.getElementById('msg');
+    if (m && !/\berr\b/.test(m.className)) { m.className += ' err'; m.textContent = 'Щось пішло не так на сторінці. Оновіть її (дані, що вже записані, не загубляться).'; }
+  }
+  window.addEventListener('unhandledrejection', ev => reportBug(ev.reason));
 
   document.getElementById('logout').onclick = () => {
     saveAuth(null);
@@ -745,7 +765,8 @@
 
 <script>
   const $ = id => document.getElementById(id);
-  const uah = n => n.toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' ₴';
+  const uah = n => (Number(n) || 0).toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' ₴';
+  const newOpId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12));
   let categories = [];
   let limits = { min: '', max: '' };
   const cards = []; // { el, files: [{name, mimeType, base64, preview}] }
@@ -770,7 +791,7 @@
   api.run
     .withSuccessHandler(data => {
       limits = { min: data.minDate, max: data.maxDate };
-      setOrder(data.order);
+      try { setOrder(data.order); } catch (e) { console.error(e); } // картка «Замовлення коштів» не має ламати форму
       for (const m of data.ministries) {
         const o = document.createElement('option'); o.value = m.id; o.textContent = m.name;
         $('ministry').appendChild(o);
@@ -800,7 +821,6 @@
     .withFailureHandler(e => {
       if (e.auth) { // пошти немає в списку або сесія закінчилась — назад на вхід із поясненням
         saveAuth(null); setSignedIn(false);
-        try { setAuthStep('email'); } catch (x) {}
         authMsg('err', errText(e));
         return;
       }
@@ -821,6 +841,7 @@
       });
       b.onclick = () => {
         if (busy || $('ministry').value === m.id) return;
+        if (cards.some(c => !isEmpty(c)) && !confirm(`Перейти до «${m.name}»? Заповнені картки буде надіслано вже в це служіння.`)) return;
         $('ministry').value = m.id;
         try { localStorage.setItem('ministry', m.id); } catch (e) {}
         sync();
@@ -848,7 +869,7 @@
           // Мінус = лідер витратив більше, ніж отримав авансів → церква має відшкодувати.
           const owed = data.balance.amount < 0;
           $('balance').classList.toggle('owed', owed);
-          $('balance').innerHTML = `<span class="k">${owed ? 'До відшкодування' : 'На руках'}</span><b>${uah(Math.abs(data.balance.amount))}</b><span class="hint">${owed ? 'витрачено більше, ніж отримано авансів' : 'баланс на кінець'} · ${data.balance.month}</span>`;
+          $('balance').innerHTML = `<span class="k">${owed ? 'До відшкодування' : 'На руках'}</span><b>${uah(Math.abs(data.balance.amount))}</b><span class="hint">${owed ? 'витрачено більше, ніж отримано авансів' : 'баланс на кінець'} · ${esc(data.balance.month)}</span>`;
           $('balance').classList.remove('hidden');
         }
         renderDashboard(data);
@@ -984,21 +1005,21 @@
       // стовпчик із заокругленим верхом, прямий низ на осі
       svg += `<path class="bar${m.expense ? '' : ' zero'}" data-i="${i}" style="--i:${i}" d="M${cx - bw / 2},${top + ih} V${yy + r} Q${cx - bw / 2},${yy} ${cx - bw / 2 + r},${yy} H${cx + bw / 2 - r} Q${cx + bw / 2},${yy} ${cx + bw / 2},${yy + r} V${top + ih} Z"/>`;
       if (m.name === cur && m.expense) svg += `<text class="val" x="${cx}" y="${yy - 5}" text-anchor="middle">${compact(m.expense)}</text>`;
-      svg += `<text class="${m.name === cur ? 'cur' : ''}" x="${cx}" y="${H - 6}" text-anchor="middle">${SHORT[m.name] || m.name}</text>`;
+      svg += `<text class="${m.name === cur ? 'cur' : ''}" x="${cx}" y="${H - 6}" text-anchor="middle">${esc(SHORT[m.name] || m.name)}</text>`;
       svg += `<rect class="hit" data-i="${i}" x="${cx - band / 2}" y="0" width="${band}" height="${H}"/>`;
     });
     svg += `<line class="axis" x1="${left}" x2="${W - right}" y1="${top + ih + .5}" y2="${top + ih + .5}"/></svg>`;
     box.innerHTML = svg + '<div class="tip hidden"></div>';
 
     $('monthTable').innerHTML = '<caption>Витрати по місяцях</caption><tr><th>Місяць</th><th>Витрати</th><th>Аванси</th></tr>' +
-      months.map(m => `<tr><td>${m.name}</td><td>${uah(m.expense)}</td><td>${uah(m.income)}</td></tr>`).join('');
+      months.map(m => `<tr><td>${esc(m.name)}</td><td>${uah(m.expense)}</td><td>${uah(m.income)}</td></tr>`).join('');
 
     const tip = box.querySelector('.tip'), svgEl = box.querySelector('svg');
     const show = i => {
       const m = months[i], bar = svgEl.querySelector(`.bar[data-i="${i}"]`);
       svgEl.querySelectorAll('.bar').forEach(b => b.classList.toggle('active', b === bar));
       const bb = bar.getBoundingClientRect(), cb = box.getBoundingClientRect();
-      tip.innerHTML = `${m.name}<br>витрати <b>${uah(m.expense)}</b>${m.income ? `<br>аванс <b>${uah(m.income)}</b>` : ''}`;
+      tip.innerHTML = `${esc(m.name)}<br>витрати <b>${uah(m.expense)}</b>${m.income ? `<br>аванс <b>${uah(m.income)}</b>` : ''}`;
       tip.classList.remove('hidden');
       const x = Math.max(60, Math.min(cb.width - 60, bb.left - cb.left + bb.width / 2));
       tip.style.left = x + 'px';
@@ -1035,9 +1056,11 @@
   }
   const DAY_NAMES = ['неділю', 'понеділок', 'вівторок', 'середу', 'четвер', 'пʼятницю', 'суботу'];
 
+  // Старіші Safari/WebView не знають «Europe/Kyiv» — тоді стара назва «Europe/Kiev».
+  const KYIV_TZ = (() => { try { new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Kyiv' }); return 'Europe/Kyiv'; } catch (e) { return 'Europe/Kiev'; } })();
   function kyivNow() {
     const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Europe/Kyiv', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+      timeZone: KYIV_TZ, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
     }).formatToParts(new Date()).map(p => [p.type, p.value]));
     const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.weekday);
     return { day, minutes: +parts.hour * 60 + +parts.minute };
@@ -1324,7 +1347,7 @@
     $('admOps').querySelectorAll('.chk').forEach(b => b.onclick = () => {
       const o = d.ops[+b.dataset.i], want = !o.checked;
       b.disabled = true; b.textContent = 'Зберігаю…';
-      call('adminSetChecked', d.id, o.month, o.row, want).then(r => {
+      call('adminSetChecked', d.id, o.month, o.row, want, { income: o.income, expense: o.expense, description: o.description }).then(r => {
         o.checked = r.checked;
         d.unchecked = d.ops.filter(x => !x.checked).length;
         if (adm.sum[d.id]) adm.sum[d.id].unchecked = d.unchecked;
@@ -1336,7 +1359,7 @@
   // ---------- cards ----------
   function addCard(files, advance) {
     const el = $('cardTpl').content.firstElementChild.cloneNode(true);
-    const card = { el, files: [], advance: false };
+    const card = { el, files: [], advance: false, opId: newOpId() };
     const prev = cards[cards.length - 1];
     el.querySelector('.date').min = limits.min;
     el.querySelector('.date').max = limits.max;
@@ -1488,29 +1511,11 @@
   const isHeic = f => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
   const isImage = f => f.type.startsWith('image/') || isHeic(f);
 
-  let heicLib = null;
-  function loadHeic() {
-    heicLib = heicLib || new Promise((res, rej) => {
-      const sc = document.createElement('script');
-      sc.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
-      sc.onload = () => res(window.heic2any); sc.onerror = rej;
-      document.head.appendChild(sc);
-    });
-    return heicLib;
-  }
-
-  /** Фото → JPEG ≤1600 px. HEIC (iPhone) спершу конвертуємо, бо Chrome його не відкриває. */
-  async function compressImage(f) {
-    if (isHeic(f)) {
-      try {
-        const heic2any = await loadHeic();
-        const out = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.9 });
-        const jpg = Array.isArray(out) ? out[0] : out;
-        f = new File([jpg], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
-      } catch (e) { /* не вдалося — спробуємо як є (Safari відкриває HEIC сам) */ }
-    }
-    return compressCanvas(f);
-  }
+  /**
+   * Фото → JPEG ≤1600 px. HEIC (iPhone) Safari відкриває сам; інші браузери — ні,
+   * тоді файл іде як є (великі — напряму в Google Диск). Без сторонніх бібліотек.
+   */
+  const compressImage = f => compressCanvas(f);
 
   function compressCanvas(f) {
     return new Promise(res => {
@@ -1534,13 +1539,13 @@
   function payloadOf(card) {
     const q = s => card.el.querySelector(s);
     if (card.advance) {
-      return { type: 'advance', ministryId: $('ministry').value, date: dateOf(card),
+      return { type: 'advance', opId: card.opId, date: dateOf(card),
         amount: q('.amount').value, description: q('.advNote').value };
     }
     const hasReceipt = !q('.noReceipt').checked;
     return {
       type: 'expense',
-      ministryId: $('ministry').value,
+      opId: card.opId,
       date: dateOf(card),
       amount: q('.amount').value,
       category: q('.category').value,
@@ -1567,64 +1572,50 @@
       try { queue.push({ card, payload: payloadOf(card) }); } catch (e) { failed++; showMsg(m, 'err', errText(e)); }
     });
 
-    let ok = 0, last = null, timing = null;
-    const tStart = performance.now();
+    let ok = 0, last = null;
     const done = (card, r) => {
       if (r.error) { failed++; showMsg(card.el.querySelector('.cardMsg'), 'err', r.error); return; }
       ok++; last = r;
       cards.splice(cards.indexOf(card), 1);
       card.el.remove();
     };
-    const size = queue.reduce((a, q) => a + (q.payload.files || []).reduce((b, f) => b + f.base64.length, 0), 0);
+    const inlineSize = () => queue.reduce((a, q) => a + (q.payload.files || []).reduce((b, f) => b + f.base64.length, 0), 0);
 
     // Великі фото (напр. HEIC з iPhone) — напряму в Google Диск, повз повільний Apps Script.
-    if (queue.length && size > 400e3) {
+    if (queue.length && inlineSize() > 400e3) {
       try {
         await directUpload(queue);
-      } catch (e) { /* не вийшло — надішлемо через сервер, як раніше */ }
+      } catch (e) { console.warn('Пряме завантаження не вдалося, надсилаю через сервер:', e); }
     }
 
-    if (queue.length && queue.reduce((a, q) => a + (q.payload.files || []).reduce((b, f) => b + f.base64.length, 0), 0) < 12e6) {
+    const ministryId = $('ministry').value;
+    if (queue.length && inlineSize() < 12e6) {
       // Швидкий шлях: фото й рядки — одним запитом.
-      $('submitAll').textContent = queue.length > 1 ? `Надсилаю ${queue.length}…` : 'Надсилаю…';
+      const base = queue.length > 1 ? `Надсилаю ${queue.length}…` : 'Надсилаю…';
+      $('submitAll').textContent = base;
       try {
-        const base = queue.length > 1 ? `Надсилаю ${queue.length}…` : 'Надсилаю…';
-        const res = await callApi('submitExpenses', [$('ministry').value, queue.map(q => q.payload)], p => {
+        const res = await callApi('submitExpenses', [ministryId, queue.map(q => q.payload)], p => {
           $('submitAll').textContent = p < 0.99 ? `${base} ${Math.round(p * 100)}%` : 'Записую у звіт…';
         });
-        timing = res.timing || null;
         res.results.forEach((r, i) => done(queue[i].card, r || { error: 'Не вдалося записати.' }));
       } catch (e) {
         failed += queue.length;
         queue.forEach(({ card }) => showMsg(card.el.querySelector('.cardMsg'), 'err', errText(e)));
       }
     } else if (queue.length) {
-      // Багато фото: спершу чеки по 3 паралельно, потім усі рядки одним записом.
-      const slots = new Array(queue.length);
-      let next = 0, up = 0;
-      const label = () => { $('submitAll').textContent = `Завантажую чеки ${up} з ${queue.length}…`; };
+      // Багато фото через сервер: по картці, по 2 паралельно.
+      let next = 0, sentCount = 0;
+      const label = () => { $('submitAll').textContent = `Надсилаю ${sentCount} з ${queue.length}…`; };
       label();
       const worker = async () => {
         while (next < queue.length) {
-          const i = next++, { card, payload } = queue[i];
-          try { slots[i] = { card, item: await call('prepareExpense', payload) }; }
+          const { card, payload } = queue[next++];
+          try { done(card, (await callApi('submitExpenses', [ministryId, [payload]])).results[0]); }
           catch (e) { failed++; showMsg(card.el.querySelector('.cardMsg'), 'err', errText(e)); }
-          up++; label();
+          sentCount++; label();
         }
       };
-      await Promise.all(Array.from({ length: Math.min(3, queue.length) }, worker));
-      const prepared = slots.filter(Boolean); // порядок рядків = порядок карток
-      if (prepared.length) {
-        $('submitAll').textContent = 'Записую у звіт…';
-        try {
-          const res = await call('writeExpenses', $('ministry').value, prepared.map(p => p.item));
-          res.results.forEach((r, i) => done(prepared[i].card, r.error
-            ? { error: r.error + ' Фото вже збережено — не додавайте їх повторно, повідомте відповідального.' } : r));
-        } catch (e) {
-          failed += prepared.length;
-          prepared.forEach(({ card }) => showMsg(card.el.querySelector('.cardMsg'), 'err', 'Не вдалося записати у звіт: ' + errText(e)));
-        }
-      }
+      await Promise.all(Array.from({ length: Math.min(2, queue.length) }, worker));
     }
 
     busy = false;
@@ -1636,12 +1627,7 @@
       const links = urls.map((u, j) => `<a href="${esc(u)}" target="_blank" rel="noopener">чек${urls.length > 1 ? ' ' + (j + 1) : ''}</a>`).join(', ');
       showMsg($('msg'), 'ok', ok > 1
         ? `✅ Записано ${ok} у звіт.`
-        : `✅ ${last.advance ? 'Аванс записано' : 'Записано'}: «${last.month}», рядок ${last.row}${links ? ' · ' + links : ''}`);
-      // Секундомір: де витрачається час (тимчасово, для оптимізації).
-      const sec = ms => (ms / 1000).toLocaleString('uk-UA', { maximumFractionDigits: 1 });
-      const total = performance.now() - tStart;
-      const t = timing ? ` · сервер ${sec(timing.server)} с (фото ${sec(timing.photos)} · звіт ${sec(timing.report)} · решта ${sec(timing.server - timing.photos - timing.report)})` : '';
-      $('msg').insertAdjacentHTML('beforeend', `<div style="font-size:12px;opacity:.7;margin-top:4px">⏱ усього ${sec(total)} с${t}</div>`);
+        : `✅ ${last.advance ? 'Аванс записано' : 'Записано'}: «${esc(last.month)}», рядок ${esc(last.row)}${links ? ' · ' + links : ''}`);
       addCard();
     }
     renumber();
