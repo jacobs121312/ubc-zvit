@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-3a2kCf4JXfXIzl1HqsUIDsSHN8L3KWfNH49KhElgKyI='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-lUe1shsy9mJyL1RI+bRhqIJ+lckQM6wnRpKVr0eJzf4='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex">
   <meta name="referrer" content="strict-origin">
@@ -601,6 +601,10 @@
       <div class="invite-bar hidden" id="inviteBar">
         <span id="inviteText"></span>
         <button type="button" id="inviteAll" style="width:auto;padding:10px 16px">Надіслати запрошення</button>
+      </div>
+      <div class="invite-bar hidden" id="reportsBar">
+        <span id="reportsText"></span>
+        <button type="button" id="reportsAll" style="width:auto;padding:10px 16px">Створити звіти</button>
       </div>
       <div class="adm-tools">
         <div style="display:flex;gap:8px"><input type="search" id="admSearch" placeholder="Пошук: служіння або відповідальний" style="flex:1">
@@ -1434,6 +1438,44 @@
     }).catch(e => { $('admMinistries').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`; });
   }
 
+  // ---------- «Звіт 26-27» усім служінням одразу ----------
+  let reportsBusy = false;
+  function updateReportsBar(allLoaded) {
+    if (reportsBusy) return;
+    const missing = adm.list.filter(m => adm.sum[m.id] && adm.sum[m.id].status === 'no-report');
+    $('reportsBar').classList.toggle('hidden', !allLoaded || !missing.length);
+    $('reportsText').textContent = `Без звіту: ${missing.length} служінь — створіть «Звіт 26-27» з їхніх «Звіт.xlsx», щоб бачити суми`;
+  }
+  $('reportsAll').onclick = async () => {
+    const missing = adm.list.filter(m => adm.sum[m.id] && adm.sum[m.id].status === 'no-report');
+    if (!confirm(`Створити «Звіт 26-27» для ${missing.length} служінь? Кожен створюється з «Звіт.xlsx» у папці служіння; наявні звіти не змінюються.`)) return;
+    reportsBusy = true;
+    const b = $('reportsAll'); b.disabled = true;
+    let created = 0; const failed = [];
+    try {
+      for (let pass = 0; pass < 10; pass++) {
+        b.textContent = `Створюю… (${created} з ${missing.length})`;
+        const r = await call('adminCreateAllReports');
+        created += r.created.length;
+        r.failed.forEach(f => { if (!failed.some(x => x.name === f.name)) failed.push(f); });
+        if (!r.remaining) break;
+      }
+      $('reportsText').textContent = `Створено: ${created}` +
+        (failed.length ? ` · не вдалося ${failed.length}: ` + failed.map(f => `${f.name} (${f.error})`).join('; ') : '');
+    } catch (e) {
+      $('reportsText').textContent = `Створено: ${created}. Помилка: ${errText(e)} — натисніть ще раз, щоб продовжити.`;
+    }
+    // оновлюємо підсумки служінь, що були без звіту (повідомлення про результат лишається видно)
+    b.textContent = 'Оновлюю суми…';
+    for (const m of missing) {
+      try { adm.sum[m.id] = await call('adminMinistrySummary', m.id); } catch (e) {}
+      renderAdmList();
+    }
+    b.disabled = false; b.textContent = 'Створити звіти';
+    b.classList.toggle('hidden', !adm.list.some(m => adm.sum[m.id] && adm.sum[m.id].status === 'no-report'));
+    reportsBusy = false;
+  };
+
   function setAdmFilter(f) {
     adm.filter = f;
     $('admFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.f === f));
@@ -1466,6 +1508,8 @@
     ].map(([k, v, sub, cls, f]) => f
       ? `<div class="kpi kpi-link ${cls || ''}${adm.filter === f ? ' on' : ''}" data-f="${f}" role="button" tabindex="0" aria-pressed="${adm.filter === f}" title="Показати служіння: ${k.toLowerCase()}"><div class="k">${k} <span class="go">→</span></div><b>${v}</b><div class="sub">${sub}</div></div>`
       : `<div class="kpi ${cls || ''}"><div class="k">${k}</div><b>${v}</b><div class="sub">${sub}</div></div>`).join('');
+
+    updateReportsBar(loaded.length === adm.list.length);
 
     const rows = adm.list.filter(admMatches);
     $('admMinistries').innerHTML = rows.length ? rows.map(m => {
