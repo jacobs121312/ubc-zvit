@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-PHfIpbc/9cQl0vjvRc2RwwrtTHmLZpNJoJ3v52I9Boc='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-FMjpAeiIQuOvQvP4rmEskUwz+vqWMOhw+eow67d5uIo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -1132,7 +1132,7 @@
 
   function cancelOp(o, b) {
     const what = `${isAdv(o) ? 'аванс' : '«' + (o.description || o.category) + '»'} на ${uah(isAdv(o) ? o.income : o.expense)} від ${dmy(o.date)}`;
-    if (!confirm(`Скасувати запис: ${what}?\n\nРядок буде видалено зі звіту, фото чека — у кошик Google Диска.`)) return;
+    if (!confirm(`Скасувати запис: ${what}?\n\nРядок буде видалено зі звіту. Фото чека лишиться на Google Диску.`)) return;
     b.disabled = true; b.textContent = 'Скасовую…';
     call('cancelOperation', $('ministry').value, o.id)
       .then(() => { showMsg($('msg'), 'ok', `Запис скасовано: ${esc(what)}.`); refreshInfo(); })
@@ -1442,7 +1442,7 @@
         }
       };
       Array.from({ length: 4 }, worker);
-      cleanupOrphans();
+      restoreTrashed();
     }).catch(e => { $('admMinistries').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`; });
   }
 
@@ -1490,14 +1490,19 @@
     renderAdmList();
   }
 
-  /** Раз на добу у фоні прибираємо фото, завантажені без подання (сервер сам пильнує, щоб не частіше). */
-  async function cleanupOrphans() {
-    const day = new Date().toISOString().slice(0, 10);
-    try { if (localStorage.getItem('orphansDay') === day) return; } catch (e) {}
+  /** Одноразово: повертаємо з кошика фото чеків, якщо їх туди переніс сайт (сервер сам пам'ятає, що вже зробив). */
+  async function restoreTrashed() {
+    try { if (localStorage.getItem('restoreDone')) return; } catch (e) {}
     try {
-      for (let i = 0; i < 10; i++) { if ((await call('adminCleanupOrphans')).done) break; }
-      localStorage.setItem('orphansDay', day);
-    } catch (e) { console.warn('Прибирання фото без подання:', e); }
+      let restored = 0;
+      for (let i = 0; i < 10; i++) {
+        const r = await call('adminRestoreTrashed');
+        restored += r.restored;
+        if (r.done) break;
+      }
+      localStorage.setItem('restoreDone', '1');
+      if (restored) console.info('Повернуто з кошика фото чеків:', restored);
+    } catch (e) { console.warn('Відновлення з кошика:', e); }
   }
 
   function admMatches(m) {
