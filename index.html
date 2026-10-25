@@ -2,9 +2,9 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-L7BpIrVguf/HtR3ah/fAu0ylmucHpdPhV3Y6X4gZl2w='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-PHfIpbc/9cQl0vjvRc2RwwrtTHmLZpNJoJ3v52I9Boc='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
-  <meta name="robots" content="noindex">
+  <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1442,6 +1442,7 @@
         }
       };
       Array.from({ length: 4 }, worker);
+      cleanupOrphans();
     }).catch(e => { $('admMinistries').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`; });
   }
 
@@ -1487,6 +1488,16 @@
     adm.filter = f;
     $('admFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.f === f));
     renderAdmList();
+  }
+
+  /** Раз на добу у фоні прибираємо фото, завантажені без подання (сервер сам пильнує, щоб не частіше). */
+  async function cleanupOrphans() {
+    const day = new Date().toISOString().slice(0, 10);
+    try { if (localStorage.getItem('orphansDay') === day) return; } catch (e) {}
+    try {
+      for (let i = 0; i < 10; i++) { if ((await call('adminCleanupOrphans')).done) break; }
+      localStorage.setItem('orphansDay', day);
+    } catch (e) { console.warn('Прибирання фото без подання:', e); }
   }
 
   function admMatches(m) {
