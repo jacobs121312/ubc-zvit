@@ -1,6 +1,6 @@
 // Службовий воркер «Звіту по витратах»: швидке відкриття і сторінка без інтернету.
 // Кешується лише сама сторінка й іконки; дані (Google Apps Script, Google Диск) — ніколи.
-const CACHE = 'zvit-v7';
+const CACHE = 'zvit-v8';
 const SHELL = ['./', 'index.html', 'privacy.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
