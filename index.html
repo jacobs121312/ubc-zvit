@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-R89556vFyAngLE0YKxWVDlye/wdrT/WdVdcS9QIcDA4=' 'sha256-FMjpAeiIQuOvQvP4rmEskUwz+vqWMOhw+eow67d5uIo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-EBaQ+0Uq/8Hp4oMcnM+r9A7GYpw1woHMu2pZXi5bvNc=' 'sha256-aiHZ5rrI4zJqMF4gZzlER3hdeFTs42CuEV5VvmKArQ4='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -509,9 +509,8 @@
 
   <section class="card signin hidden" id="signin">
     <h2 id="siTitle">Вхід</h2>
-    <p id="siLead">Увійдіть Google-акаунтом, пошта якого вписана для вашого служіння.</p>
+    <p id="siLead">Увійдіть церковним Google-акаунтом (<b>@ubchurch.lviv.ua</b>), пошта якого вписана для вашого служіння.</p>
     <div id="gWrap"><div id="gbtn"></div></div>
-    <p class="hint" style="margin:14px 0 0;font-size:13px">Пошта не Gmail? До неї теж можна прив'язати Google-акаунт: accounts.google.com → «Створити акаунт» → «Використати наявну адресу електронної пошти».</p>
     <div class="msg" id="authMsg"></div>
   </section>
 
@@ -719,8 +718,8 @@
 <script>
   // ---------- зв'язок із сервером (Google Apps Script API) ----------
   const APP = {
-    API_URL: 'https://script.google.com/macros/s/AKfycbzMhQwj2Ktpbt5o-cWZA-kbm8TkXK21xg2fvU3rTB8KeFRQMnISPVUx3-tkS-Ghn0USpA/exec',
-    CLIENT_ID: '179473446982-arfkrdps29phumqufgrkhh45oaq32d5l.apps.googleusercontent.com',
+    API_URL: 'https://script.google.com/macros/s/AKfycbyrQTtHmr8VdPm10DtIrtrB0uOy_EtMe5wZz0sdmdy5EKzFMtXBZV47PaNJ7RwmmboyLg/exec',
+    CLIENT_ID: '167678046208-et19svi2pje5b4ecc9076shfrkbvqdno.apps.googleusercontent.com',
   };
 
   // Вхід: Google ID token (~1 год, лише ця вкладка).
@@ -771,7 +770,7 @@
   function initGis() {
     if (gisReady || !window.google || !google.accounts || !google.accounts.id) return;
     gisReady = true;
-    google.accounts.id.initialize({ client_id: APP.CLIENT_ID, callback: onCredential, auto_select: false, cancel_on_tap_outside: true, login_hint: loginHint || undefined });
+    google.accounts.id.initialize({ client_id: APP.CLIENT_ID, callback: onCredential, auto_select: false, cancel_on_tap_outside: true, login_hint: loginHint || undefined, hd: 'ubchurch.lviv.ua' });
     const dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
     const box = document.getElementById('gbtn');
     google.accounts.id.renderButton(box, {
@@ -1442,7 +1441,6 @@
         }
       };
       Array.from({ length: 4 }, worker);
-      restoreTrashed();
     }).catch(e => { $('admMinistries').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`; });
   }
 
@@ -1488,21 +1486,6 @@
     adm.filter = f;
     $('admFilters').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.f === f));
     renderAdmList();
-  }
-
-  /** Одноразово: повертаємо з кошика фото чеків, якщо їх туди переніс сайт (сервер сам пам'ятає, що вже зробив). */
-  async function restoreTrashed() {
-    try { if (localStorage.getItem('restoreDone')) return; } catch (e) {}
-    try {
-      let restored = 0;
-      for (let i = 0; i < 10; i++) {
-        const r = await call('adminRestoreTrashed');
-        restored += r.restored;
-        if (r.done) break;
-      }
-      localStorage.setItem('restoreDone', '1');
-      if (restored) console.info('Повернуто з кошика фото чеків:', restored);
-    } catch (e) { console.warn('Відновлення з кошика:', e); }
   }
 
   function admMatches(m) {
