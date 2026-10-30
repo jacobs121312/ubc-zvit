@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-aiHZ5rrI4zJqMF4gZzlER3hdeFTs42CuEV5VvmKArQ4='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-0ArSi7ZxFPPnqhnqAfW1RRvUrJTwTTCEaBBpAKXMHQM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -618,7 +618,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 29.10.2026 · 6</div>
+<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 1</div>
 
 
 <nav class="tabbar" aria-label="Розділи">
@@ -1689,10 +1689,20 @@
           ${o.over ? '<div><span class="st over">перевищення бюджету</span></div>' : ''}
           <div class="op-actions">
             <button type="button" class="chk${o.checked ? ' on' : ''}" data-k="checked" data-i="${idx}"${dis} title="${esc(o.checked)}">${o.checked ? '✓ Перевірено' : 'Позначити перевіреним'}</button>
+            <button type="button" class="chk del" data-del="${idx}"${dis}>Видалити</button>
             ${inc ? '' : `<button type="button" class="chk${o.reimbursed ? ' on' : ''}" data-k="reimbursed" data-i="${idx}"${dis} title="${esc(o.reimbursed)}">${o.reimbursed ? '₴ Відшкодовано' : 'Позначити відшкодованим'}</button>`}
           </div></div>
         <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
     }).join('') : '<div class="empty">Немає операцій</div>';
+    $('admOps').querySelectorAll('.chk[data-del]').forEach(b => b.onclick = () => {
+      const o = d.ops[+b.dataset.del];
+      const what = `${isAdv(o) ? 'аванс' : '«' + (o.description || o.category) + '»'} на ${uah(isAdv(o) ? o.income : o.expense)} від ${o.date ? dmy(o.date) : ''}`;
+      if (!confirm(`Видалити запис: ${what}?\n\nРядок буде очищено у звіті (навіть якщо перевірений). Фото чека лишиться на Диску, слід — у «Журналі змін».`)) return;
+      b.disabled = true; b.textContent = 'Видаляю…';
+      call('adminDeleteOperation', d.id, o.id).then(() => {
+        openAdmDetail(d.id, adm.opsFilter);
+      }).catch(e => { b.disabled = false; b.textContent = 'Видалити'; alert(errText(e)); });
+    });
     $('admOps').querySelectorAll('.chk[data-k]').forEach(b => b.onclick = () => {
       const o = d.ops[+b.dataset.i], k = b.dataset.k, want = !o[k];
       b.disabled = true; b.textContent = 'Зберігаю…';
