@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-HEYigUZiDYnvzSapEdWqIwnMtIHZ7oVMoLrA23GqTm0='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-DxrUb9kPAmOXgl/AGS76MbWGjO5TWhG/52CyVHOqJXs='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -618,7 +618,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 2</div>
+<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 3</div>
 
 
 <nav class="tabbar" aria-label="Розділи">
@@ -1139,7 +1139,7 @@
 
   function cancelOp(o, b) {
     const what = `${isAdv(o) ? 'аванс' : '«' + (o.description || o.category) + '»'} на ${uah(isAdv(o) ? o.income : o.expense)} від ${dmy(o.date)}`;
-    if (!confirm(`Видалити запис: ${what}?\n\nРядок буде видалено зі звіту. Фото чека лишиться на Google Диску.`)) return;
+    if (!confirm(`Видалити запис: ${what}?\n\nРядок буде видалено зі звіту, а фото чека — переміщено до кошика Google Диска.`)) return;
     b.disabled = true; b.textContent = 'Видаляю…';
     call('cancelOperation', $('ministry').value, o.id)
       .then(() => { showMsg($('msg'), 'ok', `Запис видалено: ${esc(what)}.`); refreshInfo(); })
@@ -1697,7 +1697,7 @@
     $('admOps').querySelectorAll('.chk[data-del]').forEach(b => b.onclick = () => {
       const o = d.ops[+b.dataset.del];
       const what = `${isAdv(o) ? 'аванс' : '«' + (o.description || o.category) + '»'} на ${uah(isAdv(o) ? o.income : o.expense)} від ${o.date ? dmy(o.date) : ''}`;
-      if (!confirm(`Видалити запис: ${what}?\n\nРядок буде очищено у звіті (навіть якщо перевірений). Фото чека лишиться на Диску, слід — у «Журналі змін».`)) return;
+      if (!confirm(`Видалити запис: ${what}?\n\nРядок буде очищено у звіті (навіть якщо перевірений), фото чека — до кошика Диска, слід — у «Журналі змін».`)) return;
       b.disabled = true; b.textContent = 'Видаляю…';
       call('adminDeleteOperation', d.id, o.id).then(() => {
         openAdmDetail(d.id, adm.opsFilter);
