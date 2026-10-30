@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Оновлює Content-Security-Policy в index.html: геші вбудованих <script>.
 Запускати після кожної зміни скриптів у index.html, інакше браузер їх заблокує:
-    python3 scripts/update-csp.py
+    python3 scripts/update-csp.py [шлях до сторінки, типово index.html]
 """
-import base64, hashlib, pathlib, re
+import base64, hashlib, pathlib, re, sys
 
-page = pathlib.Path(__file__).resolve().parent.parent / 'index.html'
+root = pathlib.Path(__file__).resolve().parent.parent
+page = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else root / 'index.html'
 html = page.read_text(encoding='utf-8')
 hashes = ["'sha256-%s'" % base64.b64encode(hashlib.sha256(body.encode('utf-8')).digest()).decode()
           for body in re.findall(r'<script>(.*?)</script>', html, re.S)]
