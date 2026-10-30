@@ -680,6 +680,27 @@
       #balance { order: 4; }
     }
 
+
+    /* сторінка входу: на телефоні — лише картка, на широкому екрані — опис ліворуч, вхід праворуч */
+    .intro { display: none; }
+    @media (min-width: 900px) {
+      body.signed-out { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+      body.signed-out main { max-width: 1040px; width: 100%; margin: 0 auto; padding: 48px 40px;
+        display: grid; grid-template-columns: minmax(0, 1fr) 420px; grid-template-areas: "head card" "intro card"; gap: 0 72px; align-items: start; }
+      body.signed-out main > header { grid-area: head; }
+      body.signed-out .intro { grid-area: intro; display: block; }
+      body.signed-out #signin { grid-area: card; align-self: center; padding: 32px; margin: 0; }
+      body.signed-out .who-row { display: none; }
+      body.signed-out .ver { margin-left: 0; padding-bottom: 32px; }
+      .intro h2 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+        font-size: 52px; line-height: 1.04; font-weight: 700; letter-spacing: -0.045em; margin: 28px 0 16px; }
+      .intro p { font-size: 17px; line-height: 1.5; color: var(--muted); margin: 0 0 32px; max-width: 480px; }
+      .intro .feat { display: grid; gap: 16px; }
+      .intro .feat > div { display: flex; align-items: center; gap: 14px; }
+      .intro .feat b { display: block; font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
+      .intro .feat span:not(.ic) { font-size: 13.5px; color: var(--muted); }
+      body.signed-out #signin h2 { font-size: 22px; letter-spacing: -0.03em; }
+    }
   </style>
 </head>
 <body>
@@ -689,6 +710,16 @@
     <h1>Звіт по витратах</h1></div></div>
     <div class="who-row"><div class="who" id="who">Завантаження…</div><button type="button" class="logout hidden" id="logout">Вийти</button></div>
   </header>
+
+  <section class="intro" id="intro" aria-hidden="true">
+    <h2>Звіти служінь<br>без паперів</h2>
+    <p>Сфотографуйте чек — система сама запише витрату в таблицю служіння, збереже фото на Диску й покаже, скільки лишилось у бюджеті.</p>
+    <div class="feat">
+      <div><span class="ic info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.8l1.4-2h6.6l1.4 2h1.8A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span><b>Чек за кілька секунд</b>фото з телефона чи файл з комп'ютера</span></div>
+      <div><span class="ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span><b>Бюджет перед очима</b>залишок по кожній категорії й за рік</span></div>
+      <div><span class="ic warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span><b>Лише церковні акаунти</b>вхід через Google @ubchurch.lviv.ua</span></div>
+    </div>
+  </section>
 
   <section class="card signin hidden" id="signin">
     <h2 id="siTitle">Вхід</h2>
@@ -810,7 +841,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver">версія 30.10.2026 · 5</div>
+<div class="ver">версія 30.10.2026 · 6</div>
 
 
 <nav class="tabbar" aria-label="Розділи">
