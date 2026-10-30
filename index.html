@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-gG98mmTKqjmMuVXp4LGVVeCnjnBuFFWVT8eJWxvggrM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-AwKeuEYjNrLLSt5XPo8Es2rt4ONt/RQQ2lIHfKH5ATA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -13,10 +13,8 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Звіт УБЦ">
-  <meta name="theme-color" content="#f6f6f7" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#f2f2ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <style>
     :root {
       color-scheme: light;
@@ -503,13 +501,192 @@
       .op-title, .op-sub { white-space: normal; }
     }
     .tg.off { opacity: .4; pointer-events: none; cursor: default; filter: grayscale(1); }
+
+    /* ================= Новий вигляд (поверх базових стилів вище) ================= */
+    :root {
+      --bg: #f2f2ef; --surface: #ffffff; --surface-2: #f4f4f1;
+      --border: #e6e6e3; --border-strong: #d2d2cd;
+      --text: #111113; --muted: #77777d; --faint: #ababb0;
+      --accent: #2c64c9; --primary: #111113; --primary-text: #ffffff; --shadow: none;
+      --ok: #1f8a57; --ok-bg: #e6f4ec; --err: #c7362b; --err-bg: #fbe9e7;
+      --warn: #b7791f; --warn-bg: #fbf1df; --info: #2c64c9; --info-bg: #e8effb;
+      --c1: #2c64c9; --c1t: #e8effb; --c2: #1f8a57; --c2t: #e6f4ec; --c3: #d86a2b; --c3t: #fcece2;
+      --c4: #c23d68; --c4t: #f9e7ee; --c5: #2a8c96; --c5t: #e3f3f4; --c6: #6b5d4f; --c6t: #efebe6;
+      --tg: #2aabee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000; --surface: #141416; --surface-2: #1d1d20;
+        --border: #26262a; --border-strong: #38383d;
+        --text: #f5f5f7; --muted: #8e8e93; --faint: #5c5c61;
+        --accent: #6f9cf0; --primary: #f5f5f7; --primary-text: #000000;
+        --ok: #3ccf87; --ok-bg: rgba(60, 207, 135, .13); --err: #ff6b5e; --err-bg: rgba(255, 107, 94, .13);
+        --warn: #f0b24a; --warn-bg: rgba(240, 178, 74, .13); --info: #6f9cf0; --info-bg: rgba(111, 156, 240, .14);
+        --c1: #6f9cf0; --c1t: rgba(111, 156, 240, .15); --c2: #3ccf87; --c2t: rgba(60, 207, 135, .14);
+        --c3: #f08a4b; --c3t: rgba(240, 138, 75, .15); --c4: #f0709a; --c4t: rgba(240, 112, 154, .15);
+        --c5: #4cc3cd; --c5t: rgba(76, 195, 205, .14); --c6: #b9a894; --c6t: rgba(185, 168, 148, .14);
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-feature-settings: normal; letter-spacing: -0.008em;
+    }
+    h1, .hero .b-sum, .kpi b, .sec-t h2, .sec-head h2, .adm-head h2 {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* шапка */
+    .topbar { margin-bottom: 18px; }
+    .tb-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .logo { width: 42px; height: 42px; flex: none; border-radius: 12px; display: grid; place-items: center;
+      background: #1f3a5f; color: #fff; font-weight: 700; font-size: 12.5px; letter-spacing: .02em; }
+    .tb-brand h1 { margin: 0; font-size: 24px; letter-spacing: -0.035em; }
+    .eyebrow { font-size: 12px; }
+    .who { border: 0; background: var(--surface); }
+    .logout { border: 0; background: var(--surface); }
+
+    /* поверхні: без рамок і тіней, м'які кути */
+    .card, .balance, .kpi, .order, .invite-bar { border: 0 !important; box-shadow: none !important; }
+    .card { border-radius: 20px; }
+    .balance, .order { border-radius: 20px; }
+    .kpi { border-radius: 18px; }
+
+    /* огляд */
+    .hero { padding: 6px 2px 8px; }
+    .b-label { font-size: 13.5px; color: var(--muted); font-weight: 500; }
+    .b-sum { font-size: 46px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; margin: 4px 0 6px;
+      font-variant-numeric: tabular-nums; }
+    .b-sum span { color: var(--faint); font-weight: 600; }
+    .b-sum.neg { color: var(--err); }
+    .b-sub { font-size: 14px; color: var(--muted); }
+    .b-sub b { font-weight: 600; }
+    .b-sub b.ok { color: var(--ok); }
+    .b-sub b.warn { color: var(--warn); }
+    .pace { margin: 32px 0 4px; }
+    .pace-track { position: relative; height: 10px; border-radius: 99px; background: var(--surface); }
+    .pace-track > i { display: block; height: 100%; border-radius: 99px; background: var(--text); min-width: 4px; }
+    .pace-mark { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--warn); }
+    .pace-mark span { position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%);
+      font-size: 10.5px; font-weight: 600; color: var(--warn); white-space: nowrap; }
+    .pace-leg { display: flex; justify-content: space-between; gap: 10px; margin-top: 9px; font-size: 12.5px; color: var(--muted);
+      font-variant-numeric: tabular-nums; }
+
+    .sec-t { display: flex; justify-content: space-between; align-items: baseline; margin: 24px 2px 10px; }
+    .sec-t h2 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.03em; }
+    .group { background: var(--surface); border-radius: 20px; overflow: hidden; }
+    .todo { display: flex; align-items: center; gap: 13px; width: 100%; padding: 13px 14px; text-align: left;
+      background: none; border: 0; border-radius: 0; color: var(--text); font-weight: 400; }
+    .todo + .todo { border-top: 1px solid var(--border); }
+    .todo:active { transform: none; background: var(--surface-2); }
+    .ic { width: 38px; height: 38px; flex: none; border-radius: 12px; display: grid; place-items: center; }
+    .ic svg { width: 19px; height: 19px; }
+    .ic.bad { background: var(--err-bg); color: var(--err); }
+    .ic.warn { background: var(--warn-bg); color: var(--warn); }
+    .ic.info { background: var(--info-bg); color: var(--info); }
+    .ic.ok { background: var(--ok-bg); color: var(--ok); }
+    .todo-m { flex: 1; min-width: 0; }
+    .todo-m b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    .todo-m span { display: block; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chev { width: 16px; height: 16px; flex: none; color: var(--faint); }
+
+    /* служіння */
+    .ministry-label { display: none; }
+    .ministries button { border: 0; box-shadow: none; background: var(--surface); }
+    .ministries button.on { background: var(--primary); color: var(--primary-text); }
+
+    /* поля */
+    label { font-size: 13px; color: var(--muted); }
+    input, select, textarea { background-color: var(--surface-2); border: 1px solid transparent; border-radius: 12px; }
+    input:focus, select:focus, textarea:focus { border-color: var(--text); box-shadow: none; background-color: var(--surface); }
+    .amount { font-size: 22px !important; font-weight: 700; letter-spacing: -0.03em; padding-top: 9px; padding-bottom: 9px; }
+    .add-photo { background: var(--surface-2); border: 1.5px dashed var(--border-strong); border-radius: 14px; }
+    .thumb { border: 0; border-radius: 14px; }
+    .seg { background: var(--surface-2); border-radius: 11px; }
+    .seg button.on { border-color: transparent; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
+    .card-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.025em; }
+    .remove { border: 0; background: none; color: var(--err); padding: 4px 0; }
+
+    /* кнопки */
+    button { border-radius: 14px; }
+    button.secondary { border: 0; box-shadow: none; background: var(--surface); }
+    button.secondary svg { color: var(--text); }
+    .dock button { border-radius: 16px; padding: 16px; font-size: 16px; }
+    .refresh, .back { border: 0; background: var(--surface-2); }
+    .linkbtn { color: var(--accent); text-decoration: none; }
+    .splitTools .linkbtn { color: var(--accent); }
+
+    /* замовлення коштів */
+    .order.open .tg { background: var(--tg); color: #fff; }
+
+    /* вкладки */
+    .tabbar { background: color-mix(in srgb, var(--bg) 84%, transparent);
+      backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+    .tabbar button.on svg { color: var(--text); }
+    .tabbar a.support, .tabbar a.support:hover { color: var(--tg); background: transparent; }
+
+    /* аналітика */
+    .kpi b { font-size: 24px; letter-spacing: -0.035em; }
+    .sec-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.025em; }
+    .fill { background: var(--text); }
+    .track { background: var(--surface-2); }
+    .chart .bar { fill: var(--faint); }
+    .chart .bar.active { fill: var(--text); }
+    .op { gap: 13px; }
+    .op-ico { width: 38px; height: 38px; border-radius: 12px; font-weight: 700; font-size: 14px; }
+    .op-ico.inc { background: var(--ok-bg); color: var(--ok); }
+    .op-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    .op-sub { font-size: 13px; }
+    .op-amt { font-size: 15.5px; }
+    .day { display: flex; justify-content: space-between; margin: 16px 0 2px; padding-bottom: 6px;
+      font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .day:first-child { margin-top: 4px; }
+    .day span { font-weight: 500; font-variant-numeric: tabular-nums; }
+    .day + .op { border-top: 0; }
+    .st { font-size: 11.5px; padding: 2px 8px; margin-left: 0; margin-right: 4px; }
+    .st.submitted { background: var(--info-bg); color: var(--info); }
+    .st.checked { background: var(--ok-bg); color: var(--ok); }
+    .st.reimbursed { background: var(--surface-2); color: var(--text); }
+    .st.over { background: var(--warn-bg); color: var(--warn); }
+    .st.nr { background: var(--err-bg); color: var(--err); display: inline-block; margin-top: 3px; }
+    .chk { border: 0; background: var(--surface-2); color: var(--text); padding: 5px 11px; }
+    .chk.del { border: 0; }
+    .hist-tools input[type=search] { border-radius: 11px; }
+
+    /* адмінка */
+    .adm-row:hover { box-shadow: 0 0 0 1px var(--border-strong) !important; }
+    .kpi-link.on { box-shadow: inset 0 0 0 2px var(--text) !important; }
+    .badge { background: var(--surface-2); }
+    .badge.warn { background: var(--err-bg); color: var(--err); }
+
+    .ver { text-align: center; font-size: 12px; color: var(--muted); padding: 0 16px 100px; }
+    .ver a { color: var(--accent); }
+
+    @media (min-width: 900px) {
+      .tabbar { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+      .tabbar::before { content: "УБЦ · Звіт"; }
+      .tabbar a.support { background: color-mix(in srgb, var(--tg) 12%, transparent); }
+      .tb-brand h1 { font-size: 30px; }
+      .ver { padding-bottom: 30px; margin-left: var(--side); }
+    }
+    @media (max-width: 420px) { .b-sum { font-size: 40px; } }
+    /* телефон: спершу огляд і «Потребує уваги», далі замовлення коштів і баланс, потім форма */
+    @media (max-width: 899px) {
+      #viewSubmit:not(.hidden) { display: flex; flex-direction: column; }
+      .sub-main, .sub-side { display: contents; }
+      .sub-main > *, .sub-side > * { order: 5; }
+      #hero { order: 1; }
+      #attnBox { order: 2; margin-bottom: 14px; }
+      #order { order: 3; }
+      #balance { order: 4; }
+    }
+
   </style>
 </head>
 <body>
 <main>
-  <header>
-    <div class="eyebrow">Українська Біблійна Церква</div>
-    <h1>Звіт по витратах</h1>
+  <header class="topbar">
+    <div class="tb-brand"><span class="logo">УБЦ</span><div><div class="eyebrow">Українська Біблійна Церква</div>
+    <h1>Звіт по витратах</h1></div></div>
     <div class="who-row"><div class="who" id="who">Завантаження…</div><button type="button" class="logout hidden" id="logout">Вийти</button></div>
   </header>
 
@@ -545,6 +722,17 @@
   </div>
   </aside>
   <div class="sub-main">
+  <section class="hero hidden" id="hero">
+    <div class="b-label" id="heroLabel">Залишок бюджету</div>
+    <div class="b-sum" id="heroSum"></div>
+    <div class="b-sub" id="heroSub"></div>
+    <div class="pace" id="pace"></div>
+  </section>
+  <div class="hidden" id="attnBox">
+    <div class="sec-t"><h2>Потребує уваги</h2></div>
+    <div class="group" id="attn"></div>
+  </div>
+  <div class="sec-t"><h2>Новий запис</h2></div>
 
   <div id="cards"></div>
 
@@ -622,7 +810,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 4</div>
+<div class="ver">версія 30.10.2026 · 5</div>
 
 
 <nav class="tabbar" aria-label="Розділи">
@@ -1078,8 +1266,87 @@
     hist.ops = d.ops || [];
     fillHistFilters(d);
     renderHistory();
+    renderOverview(d);
     animateStats();
   }
+
+
+  // ---------- огляд: залишок, темп року, «Потребує уваги» ----------
+  const C_N = 6;
+  /** Стабільний колір категорії за її кодом: 1…6. */
+  const catColor = name => { const s = String(name || ''); let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % C_N + 1; };
+  const catInitial = name => (String(name || '').replace(/^\d+\s*/, '').trim()[0] || '•').toUpperCase();
+  function opIcon(o) {
+    if (isAdv(o)) return `<div class="op-ico inc">${ICO_INC}</div>`;
+    const c = catColor(o.category);
+    return `<div class="op-ico" style="background:var(--c${c}t);color:var(--c${c})">${esc(catInitial(o.category))}</div>`;
+  }
+  const UA_MONTHS = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
+  function dayLabel(iso) {
+    if (!iso) return 'Без дати';
+    const isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (iso === isoOf(new Date())) return 'Сьогодні';
+    if (iso === isoOf(new Date(Date.now() - 864e5))) return 'Вчора';
+    const [Y, M, D] = iso.split('-').map(Number);
+    return `${D} ${UA_MONTHS[M - 1]}${Y !== new Date().getFullYear() ? ' ' + Y : ''}`;
+  }
+  /** Яка частка навчального року (з 1 жовтня) уже минула. */
+  function yearShare() {
+    const now = new Date(), y = now.getMonth() >= 9 ? now.getFullYear() : now.getFullYear() - 1;
+    const a = new Date(y, 9, 1), b = new Date(y + 1, 9, 1);
+    return Math.min(1, Math.max(0, (now - a) / (b - a)));
+  }
+  function renderOverview(d) {
+    const cats = d.categories || [];
+    const plan = cats.reduce((a, c) => a + c.plan, 0), spent = cats.reduce((a, c) => a + c.spent, 0);
+    if (!plan) { $('hero').classList.add('hidden'); }
+    else {
+      const left = plan - spent, share = yearShare(), used = spent / plan;
+      const whole = Math.trunc(Math.abs(left)).toLocaleString('uk-UA');
+      const kop = Math.round(Math.abs(left) % 1 * 100).toString().padStart(2, '0');
+      $('heroLabel').textContent = left < 0 ? 'Бюджет перевищено на' : 'Залишок бюджету на рік';
+      $('heroSum').innerHTML = `${whole}<span>,${kop} ₴</span>`;
+      $('heroSum').classList.toggle('neg', left < 0);
+      const ahead = used - share;
+      const pace = ahead > 0.05 ? '<b class="warn">швидше за план</b>' : '<b class="ok">в межах плану</b>';
+      $('heroSub').innerHTML = `з ${uah(plan)} · витрачено ${Math.round(used * 100)}% · ${pace}`;
+      $('pace').innerHTML = `<div class="pace-track"><i style="width:${Math.min(100, used * 100).toFixed(1)}%"></i>
+          <div class="pace-mark" style="left:${(share * 100).toFixed(1)}%"><span>сьогодні</span></div></div>
+        <div class="pace-leg"><span>витрачено ${uah(spent)}</span><span>рік пройдено на ${Math.round(share * 100)}%</span></div>`;
+      $('hero').classList.remove('hidden');
+    }
+
+    const ops = hist.ops || [];
+    const noRc = ops.filter(o => o.expense > 0 && !o.receipt);
+    const waiting = ops.filter(o => o.status === 'submitted');
+    const over = cats.filter(c => c.spent > c.plan);
+    const ICO = {
+      bad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M12 8v4M12 15.5v.01"/></svg>',
+      wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+      over: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.01"/></svg>',
+      ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
+    };
+    const chev = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>';
+    const item = (kind, cls, title, sub, go) => `<button type="button" class="todo" data-go="${go}"><span class="ic ${cls}">${ICO[kind]}</span>
+      <span class="todo-m"><b>${title}</b><span>${sub}</span></span>${chev}</button>`;
+    const rows = [];
+    if (noRc.length) rows.push(item('bad', 'bad', `Без чека: ${noRc.length}`, esc([noRc[0].description || noRc[0].category.replace(/^\d+\s*/, ''), uah(noRc[0].expense)].filter(Boolean).join(' · ')) + (noRc.length > 1 ? ` і ще ${noRc.length - 1}` : ''), 'noReceipt'));
+    if (over.length) rows.push(item('over', 'warn', `Перевищено бюджет: ${over.length} ${over.length === 1 ? 'категорія' : 'категорії'}`, esc(over.map(c => c.name.replace(/^\d+\s*/, '').trim()).slice(0, 2).join(', ')), 'over'));
+    if (waiting.length) rows.push(item('wait', 'info', `На перевірці: ${waiting.length}`, `на суму ${uah(waiting.reduce((a, o) => a + o.expense + o.income, 0))}`, 'submitted'));
+    if (!rows.length && ops.length) rows.push(item('ok', 'ok', 'Усе в порядку', 'усі витрати з чеками й перевірені', 'all'));
+    $('attn').innerHTML = rows.join('');
+    $('attnBox').classList.toggle('hidden', !rows.length);
+  }
+  $('attn').onclick = ev => {
+    const b = ev.target.closest('[data-go]'); if (!b) return;
+    const go = b.dataset.go;
+    hist.status = go === 'submitted' ? 'submitted' : ''; hist.q = ''; hist.month = ''; hist.cat = ''; hist.limit = 50;
+    hist.noReceipt = go === 'noReceipt';
+    $('histStatus').value = hist.status; $('histQ').value = ''; $('histMonth').value = ''; $('histCat').value = '';
+    setTab('stats'); renderHistory();
+    const target = go === 'over' ? $('catList') : $('ops');
+    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
 
   // ---------- історія операцій (F5), редагування (F2), експорт (F7) ----------
   const ST = { submitted: 'Подано', checked: 'Перевірено', reimbursed: 'Відшкодовано' };
@@ -1104,7 +1371,8 @@
     return hist.ops.filter(o => (!hist.month || o.month === hist.month)
       && (!hist.status || (hist.status === 'over' ? o.over : o.status === hist.status))
       && (!hist.cat || o.category === hist.cat)
-      && (!hist.q || [o.description, o.vendor, o.category, o.noReceiptReason].join(' ').toLowerCase().includes(hist.q)));
+      && (!hist.q || [o.description, o.vendor, o.category, o.noReceiptReason].join(' ').toLowerCase().includes(hist.q))
+      && (!hist.noReceipt || (o.expense > 0 && !o.receipt)));
   }
 
   function renderHistory() {
@@ -1113,15 +1381,20 @@
     $('histSum').textContent = list.length
       ? `${list.length} операцій · витрати ${uah(exp)}${inc ? ` · аванси ${uah(inc)}` : ''}` : '';
     const shown = list.slice(0, hist.limit);
+    const dayTot = {};
+    shown.forEach(o => { dayTot[o.date] = (dayTot[o.date] || 0) + o.expense; });
     $('ops').innerHTML = shown.length ? shown.map((o, oi) => {
       const inc = isAdv(o);
+      const head = oi === 0 || shown[oi - 1].date !== o.date
+        ? `<div class="day">${esc(dayLabel(o.date))}<span>${dayTot[o.date] ? '−' + uah(dayTot[o.date]) : ''}</span></div>` : '';
       const title = inc ? (o.description || 'Аванс') : (o.description || o.category || 'Витрата');
-      const sub = [dmy(o.date), inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ');
-      const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>` : '';
+      const sub = [inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ');
+      const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>`
+        : (o.expense > 0 ? '<span class="st nr">без чека</span>' : '');
       const st = `<span class="st ${o.status}">${ST[o.status]}</span>${o.over ? '<span class="st over">перевищення</span>' : ''}`;
       const acts = o.deletable ? `<div class="op-actions">${o.editable ? `<button type="button" class="chk" data-act="edit" data-id="${esc(o.id)}">Змінити</button>` : ''}
         <button type="button" class="chk del" data-act="cancel" data-id="${esc(o.id)}">Видалити</button></div>` : '';
-      return `<div class="op" data-id="${esc(o.id)}" style="--i:${Math.min(oi, 10)}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? ICO_INC : ICO_EXP}</div>
+      return head + `<div class="op" data-id="${esc(o.id)}" style="--i:${Math.min(oi, 10)}">${opIcon(o)}
         <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div><div>${st}</div>${acts}</div>
         <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
     }).join('') : `<div class="empty">${hist.ops.length ? 'Нічого не знайдено' : 'Цього року ще немає операцій'}</div>`;
@@ -1129,9 +1402,9 @@
     $('histMore').textContent = `Показати ще (${list.length - shown.length})`;
   }
 
-  $('histQ').oninput = () => { hist.q = $('histQ').value.trim().toLowerCase(); hist.limit = 50; renderHistory(); };
+  $('histQ').oninput = () => { hist.noReceipt = false; hist.q = $('histQ').value.trim().toLowerCase(); hist.limit = 50; renderHistory(); };
   [['histMonth', 'month'], ['histStatus', 'status'], ['histCat', 'cat']].forEach(([id, k]) => {
-    $(id).onchange = () => { hist[k] = $(id).value; hist.limit = 50; renderHistory(); };
+    $(id).onchange = () => { hist.noReceipt = false; hist[k] = $(id).value; hist.limit = 50; renderHistory(); };
   });
   $('histMore').onclick = () => { hist.limit += 50; renderHistory(); };
   $('ops').onclick = ev => {
