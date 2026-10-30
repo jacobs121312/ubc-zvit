@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-0ArSi7ZxFPPnqhnqAfW1RRvUrJTwTTCEaBBpAKXMHQM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-HEYigUZiDYnvzSapEdWqIwnMtIHZ7oVMoLrA23GqTm0='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -618,7 +618,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 1</div>
+<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 2</div>
 
 
 <nav class="tabbar" aria-label="Розділи">
@@ -1115,8 +1115,8 @@
       const sub = [dmy(o.date), inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ');
       const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>` : '';
       const st = `<span class="st ${o.status}">${ST[o.status]}</span>${o.over ? '<span class="st over">перевищення</span>' : ''}`;
-      const acts = o.editable ? `<div class="op-actions"><button type="button" class="chk" data-act="edit" data-id="${esc(o.id)}">Змінити</button>
-        <button type="button" class="chk" data-act="cancel" data-id="${esc(o.id)}">Скасувати запис</button></div>` : '';
+      const acts = o.deletable ? `<div class="op-actions">${o.editable ? `<button type="button" class="chk" data-act="edit" data-id="${esc(o.id)}">Змінити</button>` : ''}
+        <button type="button" class="chk" data-act="cancel" data-id="${esc(o.id)}">Видалити</button></div>` : '';
       return `<div class="op" data-id="${esc(o.id)}" style="--i:${Math.min(oi, 10)}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? ICO_INC : ICO_EXP}</div>
         <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div><div>${st}</div>${acts}</div>
         <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
@@ -1139,11 +1139,11 @@
 
   function cancelOp(o, b) {
     const what = `${isAdv(o) ? 'аванс' : '«' + (o.description || o.category) + '»'} на ${uah(isAdv(o) ? o.income : o.expense)} від ${dmy(o.date)}`;
-    if (!confirm(`Скасувати запис: ${what}?\n\nРядок буде видалено зі звіту. Фото чека лишиться на Google Диску.`)) return;
-    b.disabled = true; b.textContent = 'Скасовую…';
+    if (!confirm(`Видалити запис: ${what}?\n\nРядок буде видалено зі звіту. Фото чека лишиться на Google Диску.`)) return;
+    b.disabled = true; b.textContent = 'Видаляю…';
     call('cancelOperation', $('ministry').value, o.id)
-      .then(() => { showMsg($('msg'), 'ok', `Запис скасовано: ${esc(what)}.`); refreshInfo(); })
-      .catch(e => { b.disabled = false; b.textContent = 'Скасувати запис'; alert(errText(e)); });
+      .then(() => { showMsg($('msg'), 'ok', `Запис видалено: ${esc(what)}.`); refreshInfo(); })
+      .catch(e => { b.disabled = false; b.textContent = 'Видалити'; alert(errText(e)); });
   }
 
   /** Редагування свого запису прямо в списку. */
