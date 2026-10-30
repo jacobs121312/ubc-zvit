@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-AwKeuEYjNrLLSt5XPo8Es2rt4ONt/RQQ2lIHfKH5ATA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-Wia2H3KdkEBJs0WFTQQDHMdQ8w4KOoEHoan7L+qSdfM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -724,6 +724,14 @@
       .intro .feat { gap: 16px; }
       body.signed-out #signin h2 { font-size: 22px; letter-spacing: -0.03em; }
     }
+    .thumb .upst { position: absolute; left: 6px; bottom: 6px; width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(0, 0, 0, .55); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .35); }
+    .thumb .upst:not(.ok)::after { content: ""; position: absolute; inset: 3px; border-radius: 50%;
+      border: 2px solid #fff; border-right-color: transparent; animation: spin .8s linear infinite; }
+    .thumb .upst.ok { background: var(--ok); box-shadow: none; }
+    .thumb .upst.ok::after { content: ""; position: absolute; left: 7px; top: 4px; width: 5px; height: 9px;
+      border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -864,7 +872,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver">версія 30.10.2026 · 7</div>
+<div class="ver">версія 30.10.2026 · 8</div>
 
 
 <nav class="tabbar" aria-label="Розділи">
@@ -2315,6 +2323,7 @@
         s.splits.forEach(pt => addSplit(c, pt.category, pt.amount));
       }
       c.files = s.files || [];
+      preUpload(c, c.files);
       renderPhotos(c); showLeft(c); updateRate(c); updateSplitSum(c);
     });
     renumber(); checkOver();
@@ -2325,13 +2334,79 @@
   async function addFiles(card, files) {
     const lbl = card.el.querySelector('.addText');
     if (lbl) lbl.textContent = 'Обробка фото…';
+    const added = [];
     for (const f of files) {
       try {
-        card.files.push(isImage(f) ? await compressImage(f) : await readRaw(f));
+        const x = isImage(f) ? await compressImage(f) : await readRaw(f);
+        card.files.push(x); added.push(x);
       } catch (e) { /* пропускаємо файл, який не прочитався */ }
     }
+    preUpload(card, added);
     renderPhotos(card);
     saveDraftSoon();
+  }
+
+  // ---------- завантаження фото наперед ----------
+  // Щойно фото додано, воно вже летить у Google Диск, поки людина заповнює суму й опис.
+  // При «Надіслати» на сервер ідуть лише посилання. Не вдалося — фото надішлеться звичним шляхом.
+  // Стан тримаємо окремо від card.files: ті об'єкти зберігаються в чернетці (IndexedDB), Promise туди не можна.
+  const preUp = new WeakMap(); // файл → { ministry, promise, url, failed }
+  const fileSize = f => Math.floor(f.base64.length * 3 / 4) - (f.base64.endsWith('==') ? 2 : f.base64.endsWith('=') ? 1 : 0);
+  function putFile(url, f, onProgress) {
+    return new Promise((res, rej) => {
+      const bin = atob(f.base64), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', url);
+      xhr.setRequestHeader('Content-Type', f.mimeType || 'application/octet-stream');
+      if (onProgress) xhr.upload.onprogress = ev => { if (ev.lengthComputable) onProgress(ev.loaded / ev.total); };
+      xhr.onload = () => {
+        try {
+          const r = JSON.parse(xhr.responseText);
+          if (xhr.status >= 300 || !r.id) throw new Error();
+          res(r.webViewLink || `https://drive.google.com/file/d/${r.id}/view`);
+        } catch (e) { rej(new Error('Не вдалося завантажити фото.')); }
+      };
+      xhr.onerror = () => rej(new Error('Не вдалося завантажити фото.'));
+      xhr.send(bytes);
+    });
+  }
+  function preUpload(card, files) {
+    files = files.filter(f => f && f.base64 && !preUp.has(f));
+    // Без дійсного входу не чіпаємо: getAuth() сховав би форму посеред заповнення.
+    if (!files.length || !authValid() || !navigator.onLine || !$('ministry').value) return;
+    const ministry = $('ministry').value;
+    const start = callApi('startPreUploads', [ministry, files.map(f => ({ name: f.name, mimeType: f.mimeType, size: fileSize(f) }))]);
+    files.forEach((f, i) => {
+      const st = { ministry };
+      st.promise = start.then(r => putFile(r[i].url, f))
+        .then(url => { st.url = url; return url; })
+        .catch(e => { console.warn('Фото не завантажилось наперед:', e); st.failed = true; return null; })
+        .finally(() => { if (cards.includes(card)) renderPhotos(card); });
+      preUp.set(f, st);
+    });
+  }
+  /** Перед надсиланням: готові фото — посиланнями, решту дочекатися; невдалі лишаються файлами. */
+  async function usePreUploads(queue) {
+    const ministry = $('ministry').value;
+    const pending = [];
+    queue.forEach(q => {
+      if (!q.payload.files || !q.payload.files.length) return;
+      q.card.files.forEach((f, j) => { const st = preUp.get(f); if (st && st.ministry === ministry && !st.url && !st.failed) pending.push(st.promise); });
+    });
+    if (pending.length) {
+      $('submitAll').textContent = 'Завантажую фото…';
+      await Promise.all(pending);
+    }
+    queue.forEach(q => {
+      if (!q.payload.files || !q.payload.files.length) return;
+      const urls = [], rest = [];
+      q.card.files.forEach((f, j) => {
+        const st = preUp.get(f);
+        if (st && st.ministry === ministry && st.url) urls.push(st.url); else rest.push(q.payload.files[j]);
+      });
+      if (urls.length) { q.payload.receiptUrls = urls; q.payload.files = rest; }
+    });
   }
 
   function renderPhotos(card) {
@@ -2345,6 +2420,13 @@
       const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×';
       x.onclick = () => { card.files.splice(i, 1); renderPhotos(card); saveDraftSoon(); };
       t.appendChild(x);
+      const st = preUp.get(f);
+      if (st && !st.failed) {
+        const b = document.createElement('span');
+        b.className = 'upst' + (st.url ? ' ok' : '');
+        b.title = st.url ? 'Фото вже на Диску' : 'Фото завантажується…';
+        t.appendChild(b);
+      }
       box.insertBefore(t, add);
     });
     add.querySelector('.addText').textContent = card.files.length ? 'Ще фото' : 'Фото чека';
@@ -2450,6 +2532,8 @@
     };
     const inlineSize = () => queue.reduce((a, q) => a + (q.payload.files || []).reduce((b, f) => b + f.base64.length, 0), 0);
 
+    try { await usePreUploads(queue); } catch (e) { console.warn('Фото наперед не використано:', e); }
+
     // Великі фото (напр. HEIC з iPhone) — напряму в Google Диск, повз повільний Apps Script.
     if (queue.length && inlineSize() > 400e3) {
       try {
@@ -2512,7 +2596,7 @@
     const metas = withFiles.map(({ payload: p }) => ({
       date: p.date, category: p.category, splits: p.splits, amount: p.amount, currency: p.currency,
       vendor: p.vendor, description: p.description,
-      files: p.files.map(f => ({ name: f.name, mimeType: f.mimeType, size: Math.floor(f.base64.length * 3 / 4) - (f.base64.endsWith('==') ? 2 : f.base64.endsWith('=') ? 1 : 0) })),
+      files: p.files.map(f => ({ name: f.name, mimeType: f.mimeType, size: fileSize(f) })),
     }));
     const sessions = await callApi('startUploads', [$('ministry').value, metas]);
     const jobs = [];
@@ -2520,27 +2604,13 @@
     const total = jobs.reduce((a, x) => a + x.f.base64.length, 0);
     const sent = new Array(jobs.length).fill(0);
     const label = () => { $('submitAll').textContent = `Завантажую фото… ${Math.round(sent.reduce((a, b) => a + b, 0) / total * 100)}%`; };
-    const links = await Promise.all(jobs.map((job, k) => new Promise((res, rej) => {
-      const bin = atob(job.f.base64), bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', job.url);
-      xhr.setRequestHeader('Content-Type', job.f.mimeType || 'application/octet-stream');
-      xhr.upload.onprogress = ev => { if (ev.lengthComputable) { sent[k] = ev.loaded / ev.total * job.f.base64.length; label(); } };
-      xhr.onload = () => {
-        try {
-          const r = JSON.parse(xhr.responseText);
-          if (xhr.status >= 300 || !r.id) throw new Error();
-          res(r.webViewLink || `https://drive.google.com/file/d/${r.id}/view`);
-        } catch (e) { rej(new Error('Не вдалося завантажити фото.')); }
-      };
-      xhr.onerror = () => rej(new Error('Не вдалося завантажити фото.'));
-      xhr.send(bytes);
-    })));
+    const links = await Promise.all(jobs.map((job, k) =>
+      putFile(job.url, job.f, p => { sent[k] = p * job.f.base64.length; label(); })));
     // Фото вже на Диску: далі на сервер ідуть лише посилання.
     jobs.forEach((job, k) => {
-      job.q.payload.receiptUrls = job.q.payload.receiptUrls || [];
-      job.q.payload.receiptUrls[job.j] = links[k];
+      const urls = job.q.payload.receiptUrls = job.q.payload.receiptUrls || [];
+      job.q.upBase = job.q.upBase === undefined ? urls.length : job.q.upBase;
+      urls[job.q.upBase + job.j] = links[k];
     });
     withFiles.forEach(q => { q.payload.files = []; });
   }
