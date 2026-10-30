@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-DxrUb9kPAmOXgl/AGS76MbWGjO5TWhG/52CyVHOqJXs='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-gG98mmTKqjmMuVXp4LGVVeCnjnBuFFWVT8eJWxvggrM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -483,6 +483,10 @@
     .st.checked { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
     .st.reimbursed { background: var(--ok-bg); color: var(--ok); }
     .st.over { background: var(--err-bg); color: var(--err); }
+    .chk.del { color: var(--err); background: var(--err-bg); border-color: color-mix(in srgb, var(--err) 35%, transparent); }
+    .chk.del:hover:not(:disabled) { background: color-mix(in srgb, var(--err) 18%, transparent); }
+    .tabbar a.support, .tabbar a.support:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); font-weight: 600; }
+    .tabbar a.support:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
     .op-actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .op.editing { flex-wrap: wrap; }
     .op-edit { flex-basis: 100%; padding: 6px 0 4px; }
@@ -618,7 +622,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 3</div>
+<div class="ver" style="text-align:center;font-size:11px;color:var(--faint);padding:0 0 90px">версія 30.10.2026 · 4</div>
 
 
 <nav class="tabbar" aria-label="Розділи">
@@ -635,7 +639,7 @@
     Адмін
   </button>
   <a class="support" href="https://t.me/YAKIVSVCH" target="_blank" rel="noopener noreferrer">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
     Підтримка
   </a>
 </nav>
@@ -1116,7 +1120,7 @@
       const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>` : '';
       const st = `<span class="st ${o.status}">${ST[o.status]}</span>${o.over ? '<span class="st over">перевищення</span>' : ''}`;
       const acts = o.deletable ? `<div class="op-actions">${o.editable ? `<button type="button" class="chk" data-act="edit" data-id="${esc(o.id)}">Змінити</button>` : ''}
-        <button type="button" class="chk" data-act="cancel" data-id="${esc(o.id)}">Видалити</button></div>` : '';
+        <button type="button" class="chk del" data-act="cancel" data-id="${esc(o.id)}">Видалити</button></div>` : '';
       return `<div class="op" data-id="${esc(o.id)}" style="--i:${Math.min(oi, 10)}"><div class="op-ico${inc ? ' inc' : ''}">${inc ? ICO_INC : ICO_EXP}</div>
         <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div><div>${st}</div>${acts}</div>
         <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
