@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-5m+6AWvsA2tVVb0yPU5gfc6r6QtkpwlT+BTw86QYKBI=' 'sha256-Wia2H3KdkEBJs0WFTQQDHMdQ8w4KOoEHoan7L+qSdfM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-QLriLUdbYzLC8hvh345Gwj4PMGPG0AUNny3AWkF0DqI=' 'sha256-Wia2H3KdkEBJs0WFTQQDHMdQ8w4KOoEHoan7L+qSdfM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -1013,12 +1013,13 @@
     CLIENT_ID: '167678046208-et19svi2pje5b4ecc9076shfrkbvqdno.apps.googleusercontent.com',
   };
 
-  // Вхід: Google ID token (~1 год, лише ця вкладка).
-  let auth = null; // { kind: 'google', token, exp }
+  // Вхід: спершу Google ID token (~1 год, лише ця вкладка); одразу після нього сервер видає ключ сесії
+  // (до 30 днів, у localStorage) — щоб на телефоні не входити щоразу, коли відкриваєш іконку застосунку.
+  let auth = null; // { kind: 'google', token, exp } або { kind: 'session', session, exp }
   let tokenWaiters = [];
   try {
     auth = JSON.parse(localStorage.getItem('auth') || 'null') || JSON.parse(sessionStorage.getItem('auth') || 'null');
-    if (auth && auth.kind !== 'google') { auth = null; localStorage.removeItem('auth'); } // вхід за паролем прибрано
+    if (auth && auth.kind !== 'google' && auth.kind !== 'session') { auth = null; localStorage.removeItem('auth'); } // вхід за паролем прибрано
   } catch (e) {}
 
   function jwtExp(t) {
@@ -1029,8 +1030,16 @@
     auth = a;
     try {
       localStorage.removeItem('auth'); sessionStorage.removeItem('auth');
-      if (a) sessionStorage.setItem('auth', JSON.stringify(a));
+      if (a) (a.kind === 'session' ? localStorage : sessionStorage).setItem('auth', JSON.stringify(a));
     } catch (e) {}
+  }
+
+  // Обмінюємо Google-токен на ключ сесії сервера. Не вийшло (старий сервер, обрив зв'язку) — лишаємось
+  // на Google-токені, як було: вхід просто діятиме годину.
+  function upgradeToSession(g) {
+    post({ fn: 'startSession', args: [], token: g.token })
+      .then(r => { if (r && r.session && auth === g) saveAuth({ kind: 'session', session: r.session, exp: r.exp }); })
+      .catch(() => {});
   }
 
   function setSignedIn(on) {
@@ -1044,6 +1053,7 @@
     saveAuth(a);
     setSignedIn(true);
     const w = tokenWaiters; tokenWaiters = []; w.forEach(f => f(a));
+    if (a.kind === 'google') upgradeToSession(a);
   }
 
   function onCredential(resp) {
@@ -1142,7 +1152,7 @@
   async function callApi(fn, args, onProgress) {
     const a = await getAuth();
     try {
-      return await post({ fn, args, token: a.token }, onProgress);
+      return await post(Object.assign({ fn, args }, a.kind === 'session' ? { session: a.session } : { token: a.token }), onProgress);
     } catch (e) {
       if (e.auth) saveAuth(null);
       throw e;
@@ -1181,7 +1191,13 @@
   }
   window.addEventListener('unhandledrejection', ev => reportBug(ev.reason));
 
-  document.getElementById('logout').onclick = () => {
+  document.getElementById('logout').onclick = async () => {
+    // «Вийти» скасовує ключ сесії і на сервері (з коротким очікуванням — щоб не зависнути без мережі).
+    try {
+      if (auth && auth.kind === 'session') {
+        await Promise.race([post({ fn: 'endSession', args: [], session: auth.session }), new Promise(r => setTimeout(r, 4000))]);
+      }
+    } catch (e) {}
     saveAuth(null);
     try { localStorage.removeItem('ministry'); } catch (e) {}
     try { google.accounts.id.disableAutoSelect(); } catch (e) {}
