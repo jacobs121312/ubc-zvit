@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-wm1s7ecqKYwd0aN5UYAJVJFsqWRyJVJmTNo8VkIXiOg=' 'sha256-Wia2H3KdkEBJs0WFTQQDHMdQ8w4KOoEHoan7L+qSdfM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-5m+6AWvsA2tVVb0yPU5gfc6r6QtkpwlT+BTw86QYKBI=' 'sha256-Wia2H3KdkEBJs0WFTQQDHMdQ8w4KOoEHoan7L+qSdfM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -15,6 +15,10 @@
   <meta name="apple-mobile-web-app-title" content="Звіт УБЦ">
   <meta name="theme-color" content="#f2f2ef" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <script>
+    // Збережена тема застосовується до малювання сторінки — без блимання світлим.
+    try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
   <style>
     :root {
       color-scheme: light;
@@ -25,8 +29,9 @@
       --shadow: 0 1px 2px rgba(10, 10, 11, .04);
       --ok: #15803d; --ok-bg: #ecfdf3; --err: #b91c1c; --err-bg: #fef2f2;
     }
+    /* Темна тема: за системою (data-theme не задано або «dark») або вручну кнопкою в шапці. */
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme="light"]) {
         color-scheme: dark;
         --bg: #09090b; --surface: #131316; --surface-2: #1c1c20;
         --border: #25252a; --border-strong: #33333a;
@@ -35,6 +40,15 @@
         --shadow: none;
         --ok: #4ade80; --ok-bg: rgba(74, 222, 128, .1); --err: #f87171; --err-bg: rgba(248, 113, 113, .1);
       }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #09090b; --surface: #131316; --surface-2: #1c1c20;
+      --border: #25252a; --border-strong: #33333a;
+      --text: #fafafa; --muted: #a1a1aa; --faint: #63636b;
+      --accent: #60a5fa; --primary: #fafafa; --primary-text: #0a0a0b;
+      --shadow: none;
+      --ok: #4ade80; --ok-bg: rgba(74, 222, 128, .1); --err: #f87171; --err-bg: rgba(248, 113, 113, .1);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -494,7 +508,7 @@
 
     @media print {
       body { background: #fff !important; color: #000; }
-      .tabbar, .dock, .sub-side, #ministryBlock, .logout, .refresh, .head-btns, .hist-tools, .op-actions, .chk,
+      .tabbar, .dock, .sub-side, #ministryBlock, .logout, .theme-btn, .refresh, .head-btns, .hist-tools, .op-actions, .chk,
       .invite-bar, .adm-tools, .adm-head, .links, #histMore, .people, .chart { display: none !important; }
       .card, .kpi { box-shadow: none !important; border-color: #ccc !important; break-inside: avoid; }
       .op { break-inside: avoid; }
@@ -515,7 +529,7 @@
       --tg: #2aabee;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme="light"]) {
         --bg: #000000; --surface: #141416; --surface-2: #1d1d20;
         --border: #26262a; --border-strong: #38383d;
         --text: #f5f5f7; --muted: #8e8e93; --faint: #5c5c61;
@@ -526,6 +540,17 @@
         --c3: #f08a4b; --c3t: rgba(240, 138, 75, .15); --c4: #f0709a; --c4t: rgba(240, 112, 154, .15);
         --c5: #4cc3cd; --c5t: rgba(76, 195, 205, .14); --c6: #b9a894; --c6t: rgba(185, 168, 148, .14);
       }
+    }
+    :root[data-theme="dark"] {
+      --bg: #000000; --surface: #141416; --surface-2: #1d1d20;
+      --border: #26262a; --border-strong: #38383d;
+      --text: #f5f5f7; --muted: #8e8e93; --faint: #5c5c61;
+      --accent: #6f9cf0; --primary: #f5f5f7; --primary-text: #000000;
+      --ok: #3ccf87; --ok-bg: rgba(60, 207, 135, .13); --err: #ff6b5e; --err-bg: rgba(255, 107, 94, .13);
+      --warn: #f0b24a; --warn-bg: rgba(240, 178, 74, .13); --info: #6f9cf0; --info-bg: rgba(111, 156, 240, .14);
+      --c1: #6f9cf0; --c1t: rgba(111, 156, 240, .15); --c2: #3ccf87; --c2t: rgba(60, 207, 135, .14);
+      --c3: #f08a4b; --c3t: rgba(240, 138, 75, .15); --c4: #f0709a; --c4t: rgba(240, 112, 154, .15);
+      --c5: #4cc3cd; --c5t: rgba(76, 195, 205, .14); --c6: #b9a894; --c6t: rgba(185, 168, 148, .14);
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -541,6 +566,10 @@
     .logo { width: 42px; height: 42px; flex: none; border-radius: 12px; display: grid; place-items: center;
       background: #1f3a5f; color: #fff; font-weight: 700; font-size: 12.5px; letter-spacing: .02em; }
     .tb-brand h1 { margin: 0; font-size: 24px; letter-spacing: -0.035em; }
+    .theme-btn { margin-left: auto; flex: none; width: 38px; height: 38px; padding: 0; border-radius: 999px;
+      display: grid; place-items: center; background: var(--surface); color: var(--muted); border: 0; }
+    .theme-btn:hover { color: var(--text); }
+    .theme-btn svg { width: 19px; height: 19px; }
     .eyebrow { font-size: 12px; }
     .who { border: 0; background: var(--surface); }
     .logout { border: 0; background: var(--surface); }
@@ -738,7 +767,8 @@
 <main>
   <header class="topbar">
     <div class="tb-brand"><span class="logo">УБЦ</span><div><div class="eyebrow">Українська Біблійна Церква</div>
-    <h1>Звіт по витратах</h1></div></div>
+    <h1>Звіт по витратах</h1></div>
+    <button type="button" class="theme-btn" id="themeBtn"></button></div>
     <div class="who-row"><div class="who" id="who">Завантаження…</div><button type="button" class="logout hidden" id="logout">Вийти</button></div>
   </header>
 
@@ -1032,14 +1062,53 @@
     if (gisReady || !window.google || !google.accounts || !google.accounts.id) return;
     gisReady = true;
     google.accounts.id.initialize({ client_id: APP.CLIENT_ID, callback: onCredential, auto_select: false, cancel_on_tap_outside: true, login_hint: loginHint || undefined, hd: 'ubchurch.lviv.ua' });
-    const dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+    renderGbtn();
+  }
+  function renderGbtn() {
+    if (!gisReady) return;
     const box = document.getElementById('gbtn');
+    box.innerHTML = '';
     google.accounts.id.renderButton(box, {
-      theme: dark ? 'filled_black' : 'outline', size: 'large', shape: 'rectangular', text: 'signin_with',
+      theme: isDark() ? 'filled_black' : 'outline', size: 'large', shape: 'rectangular', text: 'signin_with',
       locale: 'uk', logo_alignment: 'center', width: Math.min(400, Math.max(220, box.clientWidth || 320)),
     });
   }
   window.addEventListener('load', initGis);
+
+  // ---------- тема: як у системі → світла → темна (вибір пам'ятається в браузері) ----------
+  const THEME_ICONS = {
+    auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
+    light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  };
+  const THEME_LABEL = { auto: 'Тема: як у системі', light: 'Тема: світла', dark: 'Тема: темна' };
+  const THEME_NEXT = { auto: 'light', light: 'dark', dark: 'auto' };
+  function themeMode() {
+    try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') return t; } catch (e) {}
+    return 'auto';
+  }
+  function isDark() {
+    const m = themeMode();
+    return m === 'dark' || (m === 'auto' && !!window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function applyTheme() {
+    const m = themeMode(), root = document.documentElement;
+    if (m === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', m);
+    document.querySelectorAll('meta[name="theme-color"]').forEach(el => { // колір рядка стану телефона
+      const sysDark = /dark/.test(el.getAttribute('media') || '');
+      el.setAttribute('content', m === 'auto' ? (sysDark ? '#000000' : '#f2f2ef') : (m === 'dark' ? '#000000' : '#f2f2ef'));
+    });
+    const btn = document.getElementById('themeBtn');
+    if (btn) { btn.innerHTML = THEME_ICONS[m]; btn.title = THEME_LABEL[m]; btn.setAttribute('aria-label', THEME_LABEL[m]); }
+    renderGbtn(); // кнопка Google має підлаштуватися під тему
+  }
+  document.getElementById('themeBtn').onclick = () => {
+    const next = THEME_NEXT[themeMode()];
+    try { if (next === 'auto') localStorage.removeItem('theme'); else localStorage.setItem('theme', next); } catch (e) {}
+    applyTheme();
+  };
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode() === 'auto') applyTheme(); });
+  applyTheme();
 
   function getAuth() {
     if (authValid()) return Promise.resolve(auth);
