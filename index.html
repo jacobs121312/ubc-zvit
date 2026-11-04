@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-QLriLUdbYzLC8hvh345Gwj4PMGPG0AUNny3AWkF0DqI=' 'sha256-Wia2H3KdkEBJs0WFTQQDHMdQ8w4KOoEHoan7L+qSdfM='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-QLriLUdbYzLC8hvh345Gwj4PMGPG0AUNny3AWkF0DqI=' 'sha256-udpNSGQqHYKzst0VjrCausWFT6jDVr6rZpEhGBDEWbo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -619,9 +619,27 @@
     .chev { width: 16px; height: 16px; flex: none; color: var(--faint); }
 
     /* служіння */
+    /* Кілька служінь: сегментований перемикач; у кожного служіння свій колір —
+       та сама крапка в перемикачі й у шапці. */
     .ministry-label { display: none; }
-    .ministries button { border: 0; box-shadow: none; background: var(--surface); }
-    .ministries button.on { background: var(--primary); color: var(--primary-text); }
+    .ministries {
+      display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px;
+      padding: 3px; border-radius: 14px; background: var(--surface-2); overflow-x: auto;
+    }
+    .ministries button {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 9px 14px; border: 0; border-radius: 11px; box-shadow: none; white-space: nowrap;
+      background: transparent; color: var(--muted); font-weight: 500; transition: background .2s, color .2s;
+    }
+    .ministries button.on {
+      background: var(--surface); color: var(--text); font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px rgba(0, 0, 0, .05);
+    }
+    .ministries button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .ministries button { padding-left: 10px; padding-right: 10px; }
+    .mdot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--mc, var(--faint)); }
+    .ministries button:not(.on) .mdot { opacity: .45; }
+    .who.mc::before { background: var(--mc); }
 
     /* поля */
     label { font-size: 13px; color: var(--muted); }
@@ -1214,6 +1232,7 @@
   const uah = n => (Number(n) || 0).toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' ₴';
   const newOpId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12));
   let categories = [];
+  let ministryList = []; // служіння цього лідера (з getInitData)
   let limits = { min: '', max: '' };
   let ME = '', currencies = ['UAH'];
   const CUR_SIGN = { UAH: '₴', USD: '$', EUR: '€' };
@@ -1262,9 +1281,8 @@
         setTab('admin');
         return;
       }
-      $('who').textContent = data.ministries.length < 2
-        ? `${data.ministries[0].name} · ${data.email}`
-        : data.email;
+      $('who').textContent = `${data.ministries[0].name} · ${data.email}`;
+      showCurrentMinistry();
       addCard();
       loadCategories();
       try { if (data.isAdmin && localStorage.getItem('tab') === 'admin') setTab('admin'); } catch (e) {}
@@ -1281,11 +1299,31 @@
 
   $('ministry').addEventListener('change', loadCategories);
 
+  // Кілька служінь: назва поточного — у перемикачі над картками, у шапці й в аналітиці.
+  function currentMinistryName() {
+    const m = ministryList.find(x => x.id === $('ministry').value);
+    return m ? m.name : '';
+  }
+  // Колір служіння — з палітри графіків (--c1…--c6), за порядком у списку.
+  const ministryColor = id => `var(--c${Math.max(0, ministryList.findIndex(x => x.id === id)) % 6 + 1})`;
+  function showCurrentMinistry() {
+    if (ministryList.length < 2) return;
+    $('who').textContent = `${currentMinistryName()} · ${ME}`;
+    $('who').classList.add('mc');
+    $('who').style.setProperty('--mc', ministryColor($('ministry').value));
+    updateSubmit();
+  }
+
   function renderMinistryPills(list) {
+    ministryList = list;
     $('ministryPills').innerHTML = '';
     list.forEach(m => {
       const b = document.createElement('button');
-      b.type = 'button'; b.textContent = m.name; b.setAttribute('role', 'tab');
+      b.type = 'button'; b.setAttribute('role', 'tab');
+      b.style.setProperty('--mc', ministryColor(m.id));
+      const dot = document.createElement('i'); dot.className = 'mdot';
+      const label = document.createElement('span'); label.textContent = m.name;
+      b.append(dot, label);
       const sync = () => document.querySelectorAll('#ministryPills button').forEach((x, i) => {
         const on = list[i].id === $('ministry').value;
         x.classList.toggle('on', on); x.setAttribute('aria-selected', on);
@@ -1296,6 +1334,7 @@
         $('ministry').value = m.id;
         try { localStorage.setItem('ministry', m.id); } catch (e) {}
         sync();
+        showCurrentMinistry();
         $('balance').classList.add('hidden');
         $('ministry').dispatchEvent(new Event('change'));
         saveDraftSoon();
@@ -1451,7 +1490,8 @@
       const left = plan - spent, share = yearShare(), used = spent / plan;
       const whole = Math.trunc(Math.abs(left)).toLocaleString('uk-UA');
       const kop = Math.round(Math.abs(left) % 1 * 100).toString().padStart(2, '0');
-      $('heroLabel').textContent = left < 0 ? 'Бюджет перевищено на' : 'Залишок бюджету на рік';
+      $('heroLabel').textContent = (left < 0 ? 'Бюджет перевищено на' : 'Залишок бюджету на рік') +
+        (ministryList.length > 1 ? ` · ${currentMinistryName()}` : '');
       $('heroSum').innerHTML = `${whole}<span>,${kop} ₴</span>`;
       $('heroSum').classList.toggle('neg', left < 0);
       const ahead = used - share;
