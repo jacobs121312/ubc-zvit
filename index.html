@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-QLriLUdbYzLC8hvh345Gwj4PMGPG0AUNny3AWkF0DqI=' 'sha256-udpNSGQqHYKzst0VjrCausWFT6jDVr6rZpEhGBDEWbo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-QLriLUdbYzLC8hvh345Gwj4PMGPG0AUNny3AWkF0DqI=' 'sha256-Hwl9uJGprQZIWmlk2S2eQc+/tgoxRLTibPaOb4SHbmA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -619,26 +619,42 @@
     .chev { width: 16px; height: 16px; flex: none; color: var(--faint); }
 
     /* служіння */
+    .ministries button { border: 0; box-shadow: none; background: var(--surface); }
+    .ministries button.on { background: var(--primary); color: var(--primary-text); }
+
+    /* Адмінка → «Статистика»: навантаження, збої, хто заходив */
+    #viewAdmin:not(.show-stats) #admStats, #viewAdmin.show-stats #admList, #viewAdmin.show-stats #admDetail { display: none; }
+    #admStats .chart .bar.err { fill: var(--err); }
+    #admStats .chart text.val { font-size: 10px; }
+    .st-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 0; font-size: 14px; }
+    .st-row + .st-row { border-top: 1px solid var(--border); }
+    .st-row .k { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .st-row .v { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .st-err .k { white-space: normal; }
+    .st-err small { display: block; color: var(--muted); font-size: 12px; }
+    .st-note { font-size: 12px; color: var(--faint); text-align: center; margin: 4px 0 14px; }
+    .person .badge { margin-top: 4px; display: inline-block; }
+
     /* Кілька служінь: сегментований перемикач; у кожного служіння свій колір —
        та сама крапка в перемикачі й у шапці. */
     .ministry-label { display: none; }
-    .ministries {
+    #ministryPills {
       display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px;
       padding: 3px; border-radius: 14px; background: var(--surface-2); overflow-x: auto;
     }
-    .ministries button {
+    #ministryPills button {
       display: flex; align-items: center; justify-content: center; gap: 7px;
       padding: 9px 14px; border: 0; border-radius: 11px; box-shadow: none; white-space: nowrap;
       background: transparent; color: var(--muted); font-weight: 500; transition: background .2s, color .2s;
     }
-    .ministries button.on {
+    #ministryPills button.on {
       background: var(--surface); color: var(--text); font-weight: 600;
       box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px rgba(0, 0, 0, .05);
     }
-    .ministries button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-    .ministries button { padding-left: 10px; padding-right: 10px; }
+    #ministryPills button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    #ministryPills button { padding-left: 10px; padding-right: 10px; }
     .mdot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--mc, var(--faint)); }
-    .ministries button:not(.on) .mdot { opacity: .45; }
+    #ministryPills button:not(.on) .mdot { opacity: .45; }
     .who.mc::before { background: var(--mc); }
 
     /* поля */
@@ -900,6 +916,11 @@
     </section>
   </div>
   <div id="viewAdmin" class="hidden">
+    <div class="seg" id="admSeg">
+      <button type="button" class="on" data-v="list">Служіння</button>
+      <button type="button" data-v="stats">Статистика</button>
+    </div>
+    <div id="admStats"></div>
     <div id="admList">
       <div class="kpis" id="admKpis"></div>
       <div class="invite-bar hidden" id="inviteBar">
@@ -1869,6 +1890,98 @@
 
   // ---------- адмінка: усі служіння ----------
   const adm = { list: [], sum: {}, filter: 'all', q: '', started: false, detail: null, opsFilter: 'all' };
+  // ---------- адмінка → «Статистика» ----------
+  const FN_LABEL = {
+    getInitData: 'Відкриття сторінки', getCategories: 'Завантаження бюджету', submitExpenses: 'Подання витрат',
+    startUploads: 'Завантаження фото', startPreUploads: 'Завантаження фото наперед', editOperation: 'Редагування запису',
+    cancelOperation: 'Видалення запису лідером', adminDeleteOperation: 'Видалення запису адміном', getRate: 'Курс валют',
+    startSession: 'Вхід (нова сесія)', endSession: 'Вихід', adminStats: 'Адмінка: статистика',
+    adminListMinistries: 'Адмінка: список служінь', adminMinistrySummary: 'Адмінка: підсумки', adminMinistryDetail: 'Адмінка: служіння',
+    adminSetStatus: 'Адмінка: позначки', adminCreateReport: 'Адмінка: створення звіту', adminCreateAllReports: 'Адмінка: створення звітів',
+    adminSendInvites: 'Адмінка: запрошення', '—': 'Відхилені запити (без входу)',
+  };
+  const secs = ms => (ms / 1000).toLocaleString('uk-UA', { maximumFractionDigits: 1 }) + ' с';
+  const plural = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? few : many;
+
+  /** Стовпчики: bars = [{label, v, err}] — підпис під кожним n-м, червона частина — збої. */
+  function statChart(bars, labelEvery, aria) {
+    const W = 340, H = 150, top = 22, bottom = 20, left = 2, right = 2;
+    const ih = H - top - bottom, band = (W - left - right) / bars.length, bw = Math.max(2, Math.min(14, band * 0.62));
+    const max = Math.max(...bars.map(b => b.v), 1);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">`;
+    svg += `<line class="grid" x1="${left}" x2="${W - right}" y1="${top}" y2="${top}"/>`;
+    svg += `<text x="${W - right}" y="${top - 6}" text-anchor="end">${max}</text>`;
+    bars.forEach((b, i) => {
+      const x = left + band * i + (band - bw) / 2;
+      const h = b.v ? Math.max(2, b.v / max * ih) : 1.5, eh = b.err ? Math.max(2, b.err / max * ih) : 0;
+      svg += `<rect class="bar${b.v ? '' : ' zero'}" x="${x}" y="${top + ih - h}" width="${bw}" height="${h}" rx="${Math.min(3, bw / 2)}"><title>${esc(b.title || '')}</title></rect>`;
+      if (eh) svg += `<rect class="bar err" x="${x}" y="${top + ih - eh}" width="${bw}" height="${eh}" rx="${Math.min(3, bw / 2)}"/>`;
+      if (i % labelEvery === 0 || i === bars.length - 1) svg += `<text x="${x + bw / 2}" y="${H - 5}" text-anchor="middle">${esc(b.label)}</text>`;
+    });
+    return svg + `<line class="axis" x1="${left}" x2="${W - right}" y1="${top + ih + .5}" y2="${top + ih + .5}"/></svg>`;
+  }
+
+  function renderAdmStats(st) {
+    const days = st.days, td = days[days.length - 1], week = days.slice(-7), month = days.slice(-30);
+    const sum = (arr, k) => arr.reduce((a, x) => a + x[k], 0);
+    const wn = sum(week, 'n'), we = sum(week, 'e'), wa = sum(week, 'a');
+    const wavg = wn ? Math.round(week.reduce((a, x) => a + x.avg * x.n, 0) / wn) : 0;
+    const kpis = [
+      ['Запитів сьогодні', td.n, `за 7 днів: ${wn}`],
+      ['Людей сьогодні', td.users, `7 днів: ${st.users7} · 30 днів: ${st.users30}`],
+      ['Збоїв сьогодні', td.e, `за 7 днів: ${we} · відхилених входів: ${wa}`, td.e ? 'owed' : ''],
+      ['Середня відповідь', wavg ? secs(wavg) : '—', `найдовша сьогодні: ${td.x ? secs(td.x) : '—'}`],
+    ].map(([k, v, sub, cls]) => `<div class="kpi ${cls}"><div class="k">${k}</div><b>${v}</b><div class="sub">${esc(sub)}</div></div>`).join('');
+
+    const dayLabel = d => d.slice(8, 10) + '.' + d.slice(5, 7);
+    const dayChart = statChart(month.map(x => ({ label: dayLabel(x.d), v: x.n, err: x.e,
+      title: `${dayLabel(x.d)}: ${x.n} запитів, людей ${x.users}, збоїв ${x.e}` })), 5, 'Запити по днях');
+    const hourChart = statChart(st.hours.map((v, h) => ({ label: String(h), v, title: `${h}:00 — ${v} запитів` })), 3, 'Запити сьогодні по годинах');
+
+    const now = Date.now(), seen30 = st.people.filter(p => p.lastSeen && now - p.lastSeen < 30 * 864e5).length;
+    const people = st.people.map(p => {
+      const when = p.lastSeen ? `заходив(ла) ${fmtDate(p.lastSeen)}` : 'ще не заходив(ла)';
+      const dev = p.devices ? ` · ${p.devices} ${plural(p.devices, 'пристрій', 'пристрої', 'пристроїв')}` : '';
+      return `<div class="person"><div class="pm"><div class="pe">${esc(p.email)}</div>
+        <div class="ps">${esc(p.ministries.join(', '))} · ${when}${dev}</div>
+        ${p.church ? '' : '<span class="badge warn">не церковна пошта — увійти не зможе</span>'}</div></div>`;
+    }).join('');
+
+    const fns = Object.keys(st.fnWeek).sort((a, b) => st.fnWeek[b] - st.fnWeek[a])
+      .map(f => `<div class="st-row"><span class="k">${esc(FN_LABEL[f] || f)}</span><span class="v">${st.fnWeek[f]}</span></div>`).join('');
+    const errs = st.errors.map(e => `<div class="st-row st-err"><span class="k">${esc(e.m || 'Помилка')}
+        <small>${esc(FN_LABEL[e.fn] || e.fn)}</small></span><span class="v">${new Date(e.at).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></div>`).join('');
+
+    $('admStats').innerHTML = `<div class="kpis">${kpis}</div>
+      <section class="card"><div class="sec-head"><h2>Запити по днях</h2><span class="hint">30 днів · червоне — збої</span></div>
+        <div class="chart">${dayChart}</div></section>
+      <section class="card"><div class="sec-head"><h2>Сьогодні по годинах</h2><span class="hint">запити</span></div>
+        <div class="chart">${hourChart}</div></section>
+      <section class="card"><div class="sec-head"><h2>Останні збої</h2><span class="hint">помилки сервера</span></div>
+        ${errs || '<div class="empty">Збоїв не було</div>'}</section>
+      <section class="card people"><div class="sec-head"><h2>Хто заходив</h2><span class="hint">за 30 днів: ${seen30} з ${st.people.length}</span></div>
+        ${people || '<div class="empty">Немає людей у таблиці служінь</div>'}</section>
+      <section class="card"><div class="sec-head"><h2>Що робили за тиждень</h2><span class="hint">запитів</span></div>
+        ${fns || '<div class="empty">Ще немає даних</div>'}</section>
+      <div class="st-note">Лічильники запитів і збоїв ведуться з ${esc(dayLabel(st.since))}.${st.since.slice(0, 4)}; дати входів — з початку роботи сайту.
+        <button type="button" class="refresh" id="admStatsRefresh" style="margin-left:6px">Оновити</button></div>`;
+    $('admStatsRefresh').onclick = loadAdmStats;
+  }
+
+  function loadAdmStats() {
+    $('admStats').innerHTML = '<div class="empty">Завантаження статистики…</div>';
+    call('adminStats').then(renderAdmStats)
+      .catch(e => { $('admStats').innerHTML = `<div class="msg err" style="display:block">${esc(errText(e))}</div>`; });
+  }
+
+  $('admSeg').onclick = ev => {
+    const b = ev.target.closest('button'); if (!b) return;
+    const stats = b.dataset.v === 'stats';
+    $('admSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    $('viewAdmin').classList.toggle('show-stats', stats);
+    if (stats) loadAdmStats();
+  };
+
   const ADM_FILTERS = [['all', 'Усі'], ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['unreimbursed', 'Не відшкодовані'], ['over', 'Перевищено'], ['noReport', 'Без звіту']];
 
   function openAdmin() {
