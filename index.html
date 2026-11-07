@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-QLriLUdbYzLC8hvh345Gwj4PMGPG0AUNny3AWkF0DqI=' 'sha256-Hwl9uJGprQZIWmlk2S2eQc+/tgoxRLTibPaOb4SHbmA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-/hJ+2LZvLeBY3ZSEI5+mmCXIddzC48sMU3lKVHtD8Us=' 'sha256-Hwl9uJGprQZIWmlk2S2eQc+/tgoxRLTibPaOb4SHbmA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -795,10 +795,28 @@
     .thumb .upst.ok::after { content: ""; position: absolute; left: 7px; top: 4px; width: 5px; height: 9px;
       border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* Повідомлення про технічні роботи (показується до дати в MAINT_UNTIL) */
+    .maint { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
+      background: rgba(0, 0, 0, .45); }
+    .maint-card { width: 100%; max-width: 400px; background: var(--surface); color: var(--text);
+      border-radius: 20px; padding: 22px 20px 18px; box-shadow: 0 10px 40px rgba(0, 0, 0, .25); text-align: center; }
+    .maint-ic { width: 46px; height: 46px; margin: 0 auto 12px; border-radius: 14px; display: grid; place-items: center;
+      background: var(--warn-bg, #fbf1df); color: var(--warn, #b7791f); }
+    .maint-ic svg { width: 24px; height: 24px; }
+    .maint h2 { margin: 0 0 8px; font-size: 19px; letter-spacing: -0.02em; }
+    .maint p { margin: 0 0 16px; color: var(--muted); font-size: 14.5px; line-height: 1.45; }
   </style>
 </head>
 <body>
 <main>
+  <div class="maint hidden" id="maint" role="dialog" aria-modal="true" aria-labelledby="maintTitle">
+    <div class="maint-card">
+      <div class="maint-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></div>
+      <h2 id="maintTitle">Технічні роботи</h2>
+      <p>Сьогодні ведуться технічні роботи для пришвидшення сервісу. Можливі затримки або короткі перерви в роботі. Дякуємо за терпіння!</p>
+      <button type="button" id="maintOk">Зрозуміло</button>
+    </div>
+  </div>
   <header class="topbar">
     <div class="tb-brand"><span class="logo">УБЦ</span><div><div class="eyebrow">Українська Біблійна Церква</div>
     <h1>Звіт по витратах</h1></div>
@@ -1123,6 +1141,21 @@
     });
   }
   window.addEventListener('load', initGis);
+
+  // ---------- технічні роботи: повідомлення до кінця дня MAINT_UNTIL (за Києвом), раз за відкриття вкладки ----------
+  const MAINT_UNTIL = '2026-11-07';
+  (() => {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' }); // рррр-мм-дд
+    let seen = false;
+    try { seen = sessionStorage.getItem('maint') === MAINT_UNTIL; } catch (e) {}
+    if (today > MAINT_UNTIL || seen) return;
+    const box = document.getElementById('maint');
+    box.classList.remove('hidden');
+    document.getElementById('maintOk').onclick = () => {
+      box.classList.add('hidden');
+      try { sessionStorage.setItem('maint', MAINT_UNTIL); } catch (e) {}
+    };
+  })();
 
   // ---------- тема: як у системі → світла → темна (вибір пам'ятається в браузері) ----------
   const THEME_ICONS = {
