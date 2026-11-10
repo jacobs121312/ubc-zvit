@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-/hJ+2LZvLeBY3ZSEI5+mmCXIddzC48sMU3lKVHtD8Us=' 'sha256-Hwl9uJGprQZIWmlk2S2eQc+/tgoxRLTibPaOb4SHbmA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-18ZBbROXuzxCa1w8JK3W61g4jLbbUynLiLJOnAcBNT0=' 'sha256-2IwynCyuy2U5/yTYERgi8cZaPYLvGxRA9PPZTzVxrUA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -140,6 +140,17 @@
     .add-photo:hover { border-color: var(--text); color: var(--text); }
     .add-photo svg { width: 22px; height: 22px; }
     .add-photo em { font-style: normal; }
+    /* Перетягування чеків (комп'ютер): підказка на кнопці, підсвітка картки й сторінки */
+    .add-photo .addHint { display: none; font-size: 11px; opacity: .7; text-align: center; padding: 0 6px; }
+    @media (hover: hover) and (pointer: fine) { .add-photo .addHint { display: block; } }
+    .drop-on { outline: 2px dashed var(--accent); outline-offset: -2px; }
+    .drop-on .add-photo { border-color: var(--accent); color: var(--accent); }
+    body.dragging::before { content: ""; position: fixed; inset: 10px; z-index: 40; pointer-events: none;
+      border: 2px dashed var(--accent); border-radius: 20px; }
+    body.dragging::after { content: "Відпустіть на картку — чек додасться до неї. Будь-де — кожен чек стане окремою витратою.";
+      position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 41; pointer-events: none; width: max-content; max-width: calc(100% - 48px);
+      padding: 10px 16px; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; font-size: 14px; text-align: center;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, .25); }
 
     /* Тумблер «Чека немає» */
     .check { display: flex; justify-content: space-between; align-items: center; gap: 12px;
@@ -999,6 +1010,7 @@
         <label class="add-photo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>
           <em class="addText">Фото чека</em>
+          <small class="addHint">або перетягніть / вставте</small>
           <input type="file" class="file" accept="image/*,application/pdf" multiple>
         </label>
       </div>
@@ -1064,9 +1076,17 @@
 </template>
 
 <script>
-  // ---------- зв'язок із сервером (Google Apps Script API) ----------
+  // ---------- зв'язок із сервером ----------
+  // Основний — Google Apps Script. Новий бекенд (Cloudflare Workers) можна ввімкнути на своєму пристрої для перевірки:
+  // localStorage.apiUrl = 'https://….workers.dev'. Приймаються лише адреси нового API — щоб вхід не пішов кудись іще.
   const APP = {
-    API_URL: 'https://script.google.com/macros/s/AKfycbyrQTtHmr8VdPm10DtIrtrB0uOy_EtMe5wZz0sdmdy5EKzFMtXBZV47PaNJ7RwmmboyLg/exec',
+    API_URL: (() => {
+      try {
+        const u = localStorage.getItem('apiUrl') || '';
+        if (/^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev\/?$|^https:\/\/api\.budget\.ubchurch\.lviv\.ua\/?$/.test(u)) return u;
+      } catch (e) {}
+      return 'https://script.google.com/macros/s/AKfycbyrQTtHmr8VdPm10DtIrtrB0uOy_EtMe5wZz0sdmdy5EKzFMtXBZV47PaNJ7RwmmboyLg/exec';
+    })(),
     CLIENT_ID: '167678046208-et19svi2pje5b4ecc9076shfrkbvqdno.apps.googleusercontent.com',
   };
 
@@ -2355,6 +2375,20 @@
     el.querySelector('.file').onchange = async ev => {
       await addFiles(card, [...ev.target.files]); ev.target.value = '';
     };
+    // Чек можна перетягнути просто на картку (з робочого столу, Finder, пошти).
+    ['dragenter', 'dragover'].forEach(t => el.addEventListener(t, ev => {
+      if (!hasFiles(ev) || card.advance) return;
+      ev.preventDefault(); ev.stopPropagation();
+      ev.dataTransfer.dropEffect = 'copy';
+      el.classList.add('drop-on');
+    }));
+    el.addEventListener('dragleave', ev => { if (!el.contains(ev.relatedTarget)) el.classList.remove('drop-on'); });
+    el.addEventListener('drop', ev => {
+      if (!hasFiles(ev) || card.advance) return;
+      ev.preventDefault(); ev.stopPropagation();
+      el.classList.remove('drop-on'); document.body.classList.remove('dragging');
+      takeFiles(ev.dataTransfer.files, files => addFiles(card, files));
+    });
     el.querySelector('.noReceipt').onchange = ev => {
       el.querySelector('.receipt').classList.toggle('hidden', ev.target.checked);
       el.querySelector('.reasonBlock').classList.toggle('hidden', !ev.target.checked);
@@ -2528,15 +2562,53 @@
 
   // Кілька фото → кожне окрема витрата. Порожню першу картку використовуємо під перше фото.
   $('bulkBtn').onclick = () => $('bulkFiles').click();
-  $('bulkFiles').onchange = ev => {
-    const files = [...ev.target.files]; ev.target.value = '';
-    if (!files.length) return;
+  function bulkAdd(files) {
     files.forEach((f, i) => {
       const first = cards[0];
       if (i === 0 && cards.length === 1 && isEmpty(first) && !first.advance) addFiles(first, [f]);
       else addCard([f]);
     });
+  }
+  $('bulkFiles').onchange = ev => {
+    const files = [...ev.target.files]; ev.target.value = '';
+    if (files.length) bulkAdd(files);
   };
+
+  // ---------- перетягування й вставка чеків ----------
+  const isReceiptFile = f => /^image\//.test(f.type) || f.type === 'application/pdf' || /\.(jpe?g|png|hei[cf]|webp|pdf)$/i.test(f.name || '');
+  const hasFiles = ev => [...((ev.dataTransfer && ev.dataTransfer.types) || [])].includes('Files');
+  /** Можна додавати чеки: увійшли й відкрита вкладка «Подати». */
+  const canTakeReceipts = () => !document.body.classList.contains('signed-out') && !document.body.classList.contains('tab-stats')
+    && !document.body.classList.contains('tab-admin') && !$('viewSubmit').classList.contains('hidden');
+  /** Лишає тільки фото й PDF; про решту — повідомлення. */
+  function takeFiles(list, use) {
+    const all = [...(list || [])], files = all.filter(isReceiptFile);
+    if (files.length < all.length) showMsg($('msg'), 'err', 'Можна додавати лише фото (JPG, PNG, HEIC) або PDF — інші файли пропущено.');
+    if (files.length) use(files);
+  }
+  // Сторінка: файл, кинутий не на картку, стає окремою витратою (як «Кілька чеків одразу»).
+  let dragDepth = 0;
+  window.addEventListener('dragenter', ev => {
+    if (!hasFiles(ev)) return;
+    ev.preventDefault();
+    if (canTakeReceipts() && ++dragDepth === 1) document.body.classList.add('dragging');
+  });
+  window.addEventListener('dragover', ev => { if (hasFiles(ev)) { ev.preventDefault(); ev.dataTransfer.dropEffect = canTakeReceipts() ? 'copy' : 'none'; } });
+  window.addEventListener('dragleave', ev => { if (hasFiles(ev) && --dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+  window.addEventListener('drop', ev => {
+    if (!hasFiles(ev)) return;
+    ev.preventDefault(); // інакше браузер відкриє файл замість сторінки
+    dragDepth = 0; document.body.classList.remove('dragging');
+    if (canTakeReceipts()) takeFiles(ev.dataTransfer.files, bulkAdd);
+  });
+  // Вставка (⌘V / Ctrl+V) скріншота чи файлу: у картку, де зараз курсор; інакше — як перетягування на сторінку.
+  document.addEventListener('paste', ev => {
+    const files = [...((ev.clipboardData && ev.clipboardData.files) || [])];
+    if (!files.length || !canTakeReceipts()) return; // звичайний текст вставляється як завжди
+    ev.preventDefault();
+    const card = cards.find(c => c.el.contains(document.activeElement));
+    takeFiles(files, fs => (card && !card.advance ? addFiles(card, fs) : bulkAdd(fs)));
+  });
 
   function isEmpty(card) {
     const q = s => card.el.querySelector(s).value;
@@ -2851,7 +2923,7 @@
       const links = urls.map((u, j) => `<a href="${esc(u)}" target="_blank" rel="noopener">чек${urls.length > 1 ? ' ' + (j + 1) : ''}</a>`).join(', ');
       showMsg($('msg'), 'ok', ok > 1
         ? `✅ Записано ${ok} у звіт.`
-        : `✅ ${last.advance ? 'Аванс записано' : 'Записано'}: «${esc(last.month)}», рядок ${esc(last.row)}${links ? ' · ' + links : ''}`);
+        : `✅ ${last.advance ? 'Аванс записано' : 'Записано'}: «${esc(last.month)}»${last.row ? `, рядок ${esc(last.row)}` : ''}${links ? ' · ' + links : ''}`);
       addCard();
     }
     renumber();

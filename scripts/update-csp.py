@@ -18,7 +18,8 @@ policy = '; '.join([
     "font-src https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com",
     "connect-src 'self' https://script.google.com https://script.googleusercontent.com "
-    "https://www.googleapis.com https://accounts.google.com/gsi/",
+    "https://www.googleapis.com https://accounts.google.com/gsi/ "
+    "https://*.workers.dev https://api.budget.ubchurch.lviv.ua",   # новий бекенд (Cloudflare Workers)
     "frame-src https://accounts.google.com/gsi/",
     "manifest-src 'self'",
     "worker-src 'self'",                     # sw.js — застосунок на головному екрані
