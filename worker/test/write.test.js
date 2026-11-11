@@ -97,6 +97,28 @@ describe('фото чеків', () => {
     expect(op.receipt).toBe(url);
   });
 
+  it('фото до витрати без чека: needsReceipt, attachReceipts знімає позначку', async () => {
+    const fid = 'later' + 'x'.repeat(20);
+    await withGoogle({ files: {
+      [fid]: { id: fid, name: 'чек.jpg', mimeType: 'image/jpeg', size: '1000', parents: ['pre1'], appProperties: { zm: 'm1', zb: L, pre: '1' } },
+      rec1: { id: 'rec1', name: 'Чеки', mimeType: 'application/vnd.google-apps.folder', parents: ['m1'] },
+    } });
+    await env.DB.prepare(`INSERT INTO ops (id, ministry_id, type, date, amount, category, description, vendor, has_receipt, receipt_text, by_email, created_at, source, note)
+      VALUES ('imp1', 'm1', 'expense', '2026-10-10', 250, '3401 Події/заходи', 'стара', '', 1, 'так', '', 1, 'import', 'Подав(ла): x\nПотрібно звірити чек')`).run();
+    let op = (await api(L, 'getCategories', 'm1')).result.ops.find(o => o.id === 'imp1');
+    expect(op.needsReceipt).toBe(true);
+    const url = `https://drive.google.com/file/d/${fid}/view`;
+    const r = await api(L, 'attachReceipts', 'm1', 'imp1', [url]);
+    expect(r.ok).toBe(true);
+    op = (await api(L, 'getCategories', 'm1')).result.ops.find(o => o.id === 'imp1');
+    expect(op).toMatchObject({ needsReceipt: false, receipt: url });
+    expect((await env.DB.prepare("SELECT note FROM ops WHERE id = 'imp1'").first()).note).toBe('Подав(ла): x');
+    const again = await api(L, 'attachReceipts', 'm1', 'imp1', [url]);
+    expect(again.error).toMatch(/вже є фото/);
+    const alien = await api('media@ubchurch.lviv.ua', 'attachReceipts', 'm1', 'imp1', [url]);
+    expect(alien.ok).toBe(false);
+  });
+
   it('сесії прямого завантаження і ліміт', async () => {
     await withGoogle({ files: { rec1: { id: 'rec1', name: 'Чеки', mimeType: 'application/vnd.google-apps.folder', parents: ['m1'] } } });
     const r = await api(L, 'startUploads', 'm1', [Object.assign(card(), { files: [{ name: 'a.jpg', mimeType: 'image/jpeg', size: 1000 }] })]);

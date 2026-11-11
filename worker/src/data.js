@@ -38,6 +38,8 @@ export function opShape(o, receipts, email) {
     receiptText: o.receipt_text,
     receipt: receipts && receipts.length ? receiptUrl(receipts[0]) : '',
     noReceiptReason: o.no_receipt_reason,
+    // Чек мав бути («Так» у таблиці), але фото не прив'язане — лідер може додати його пізніше.
+    needsReceipt: o.type === 'expense' && !!o.has_receipt && !(receipts && receipts.length),
     checked: chk, reimbursed: rb,
     status: rb ? 'reimbursed' : chk ? 'checked' : 'submitted',
     by: o.by_email, over: !!o.over,

@@ -9,6 +9,7 @@ import * as ops from './ops.js';
 import * as admin from './admin.js';
 import { processDue } from './mirror.js';
 import { syncSettings, processImportJobs } from './import.js';
+import { processMatchJobs } from './match.js';
 
 const NOT_LISTED = 'Цієї пошти немає в списку служінь. Зверніться до адміністратора, щоб її додали.';
 
@@ -25,6 +26,7 @@ const ACTIONS = {
   startUploads: ops.startUploads,
   startPreUploads: ops.startPreUploads,
   editOperation: ops.editOperation,
+  attachReceipts: ops.attachReceipts,
   cancelOperation: ops.cancelOperation,
   adminDeleteOperation: ops.adminDeleteOperation,
   adminSetStatus: ops.adminSetStatus,
@@ -99,6 +101,7 @@ export default {
     // Щохвилини — дозапис у таблиці того, що не вдалося одразу; раз на 5 хв — таблиця служінь.
     ctxExec.waitUntil(processDue(env).catch(e => console.error('mirror cron', e)));
     if (env.GOOGLE_SA_KEY) ctxExec.waitUntil(processImportJobs(env).catch(e => console.error('import cron', e)));
+    if (env.GOOGLE_SA_KEY) ctxExec.waitUntil(processMatchJobs(env).catch(e => console.error('match cron', e)));
     if (env.GOOGLE_SA_KEY && env.SETTINGS_SPREADSHEET_ID && t.getUTCMinutes() % 5 === 0) {
       ctxExec.waitUntil(syncSettings(env).catch(e => console.error('settings sync', e)));
     }

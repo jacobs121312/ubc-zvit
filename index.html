@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-wdikMgOlxS8HEHIdBWi9xaVnzKyiicz4dLCsSOaNQbA=' 'sha256-d1Smo5VK1bKqSOmhepy++2ba2qVuXd0DexZFd+XjaGE='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-UyhIl8Y+jN5NC6V+KdEvExMBdYJjhntjZ7SL7QgjTnE=' 'sha256-IzJpm9TY5c7jJCCLQmdKNQvaYIVijcXaH+a+Ah2CLFU='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -816,6 +816,108 @@
     .maint-ic svg { width: 24px; height: 24px; }
     .maint h2 { margin: 0 0 8px; font-size: 19px; letter-spacing: -0.02em; }
     .maint p { margin: 0 0 16px; color: var(--muted); font-size: 14.5px; line-height: 1.45; }
+
+    /* ---------- дизайн 11.2026 ---------- */
+    /* Стрічка залишку: зʼявляється вгорі, коли великий блок залишку прокручено */
+    .bstrip { position: fixed; top: 0; left: 0; right: 0; z-index: 30; display: flex; align-items: center; gap: 10px;
+      padding: calc(8px + env(safe-area-inset-top)) 16px 8px; font-size: 13.5px; color: var(--muted);
+      background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
+      border-bottom: 1px solid var(--border); transform: translateY(-110%); transition: transform .22s ease; cursor: pointer; }
+    .bstrip.show { transform: none; }
+    .bstrip b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .bstrip b.neg { color: var(--err); }
+    .bstrip .bs-track { flex: 1; min-width: 50px; max-width: 220px; height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-left: auto; }
+    .bstrip .bs-track > i { display: block; height: 100%; border-radius: 99px; background: var(--text); }
+    .bstrip .bs-track.over > i { background: var(--err); }
+    body:not(.tab-stats) .bstrip.hidden, body.tab-stats .bstrip { display: none; }
+    @media (min-width: 900px) { .bstrip { left: var(--side, 0); } }
+
+    /* Останні записи */
+    .sec-t .more { width: auto; padding: 0; margin: 0; border: 0; background: none; box-shadow: none; color: var(--accent); font-size: 14px; font-weight: 500; }
+    .recent .op { padding: 11px 14px; margin: 0; border-radius: 0; }
+    .recent .op + .op { border-top: 1px solid var(--border); }
+    .recent .op-sub .st { margin-left: 0; }
+    .rc-add { width: auto; display: inline-block; margin-top: 3px; padding: 3px 10px; font-size: 12px; font-weight: 600; border-radius: 999px;
+      background: var(--warn-bg); color: var(--warn); border: 0; box-shadow: none; }
+    .rc-add:disabled { opacity: .7; }
+    .st.need { background: var(--warn-bg); color: var(--warn); }
+
+    /* Прогрес завантаження фото — кільце */
+    .thumb .upst.prog { background: radial-gradient(circle closest-side, rgba(0,0,0,.6) 66%, transparent 70%),
+      conic-gradient(#fff calc(var(--p, 0) * 1turn), rgba(0,0,0,.45) 0); box-shadow: none; }
+    .thumb .upst.prog::after { display: none; }
+
+    /* Скелетони, поки дані завантажуються */
+    .sk { display: block; height: 14px; border-radius: 7px; background: linear-gradient(90deg, var(--surface-2) 0, color-mix(in srgb, var(--surface-2) 55%, var(--surface)) 50%, var(--surface-2) 100%);
+      background-size: 200% 100%; animation: skel 1.3s ease-in-out infinite; }
+    .hero .sk { background-color: var(--surface); }
+    .sk + .sk { margin-top: 10px; }
+    .sk.big { height: 44px; width: 62%; border-radius: 12px; margin: 6px 0 14px; }
+    @keyframes skel { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+    @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+
+    /* Повідомлення внизу (замість зеленого блоку) */
+    .toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 60; transform: translate(-50%, 20px);
+      display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); width: max-content; padding: 12px 14px 12px 16px;
+      border-radius: 16px; background: var(--text); color: var(--bg); font-size: 14.5px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+    body:not(.tab-stats) .toast { bottom: calc(170px + env(safe-area-inset-bottom)); } /* над кнопкою «Надіслати» */
+    .toast a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+    .toast .t-undo { width: auto; margin: 0 0 0 4px; padding: 6px 12px; border: 0; border-radius: 10px; box-shadow: none;
+      background: color-mix(in srgb, var(--bg) 18%, transparent); color: inherit; font-size: 14px; font-weight: 600; }
+    @media (min-width: 900px) { .toast, body:not(.tab-stats) .toast { bottom: 28px; left: calc(50% + var(--side, 0px) / 2); } }
+
+    /* Шапка на телефоні: ініціали з меню */
+    .avatar { display: none; width: 38px; height: 38px; padding: 0; flex: none; border-radius: 50%; border: 0; box-shadow: none;
+      background: var(--primary); color: var(--primary-text); font-size: 14px; font-weight: 700; letter-spacing: .02em; }
+    .umenu { position: absolute; right: 16px; top: calc(100% + 6px); z-index: 40; width: min(300px, calc(100vw - 32px)); padding: 6px;
+      border-radius: 16px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 12px 36px rgba(0,0,0,.18); }
+    .avatar.mc { background: var(--mc); color: #fff; }
+    .toast.err { background: var(--err); color: #fff; }
+    .um-who { padding: 10px 12px 12px; border-bottom: 1px solid var(--border); margin-bottom: 4px; font-size: 13px; color: var(--muted); word-break: break-all; }
+    .um-who b { display: block; color: var(--text); font-size: 15px; font-weight: 600; word-break: normal; }
+    .um-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 0; box-shadow: none; border-radius: 10px;
+      background: none; color: var(--text); font-size: 15px; font-weight: 500; text-align: left; }
+    .um-item:hover { background: var(--surface-2); }
+    .um-item svg { width: 18px; height: 18px; }
+    .um-item.danger { color: var(--err); }
+    @media (max-width: 899px) {
+      .topbar { position: relative; }
+      body:not(.signed-out) .avatar { display: grid; place-items: center; }
+      body:not(.signed-out) .who-row .who, body:not(.signed-out) .who-row .logout, body:not(.signed-out) #themeBtn { display: none; }
+      body:not(.signed-out) .tb-brand { flex: 1; }
+      body:not(.signed-out) .topbar { display: flex; align-items: center; gap: 12px; }
+    }
+    @media (min-width: 900px) { .umenu { display: none !important; } }
+
+    /* Помилки біля полів */
+    .card .invalid, .card .add-photo.invalid { border-color: var(--err) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--err) 18%, transparent) !important; }
+    .ferr { margin: 5px 2px 0; font-size: 13px; color: var(--err); }
+
+    /* Адмінка: таблиця служінь */
+    .adm-view { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--surface-2); justify-self: end; }
+    .adm-view button { width: auto; padding: 6px 12px; border: 0; box-shadow: none; border-radius: 8px; background: none; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .adm-view button.on { background: var(--surface); color: var(--text); }
+    .adm-tablewrap { grid-column: 1 / -1; overflow-x: auto; border-radius: 16px; background: var(--surface); }
+    @media (min-width: 900px) { .adm-view { grid-column: 1 / -1; } }
+    .adm-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .adm-table th { position: sticky; top: 0; background: var(--surface); text-align: right; font-size: 12px; font-weight: 600; color: var(--muted);
+      padding: 0; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .adm-table th button { width: 100%; padding: 11px 12px; border: 0; box-shadow: none; background: none; color: inherit; font: inherit; text-align: inherit; }
+    .adm-table th.on { color: var(--text); }
+    .adm-table th:first-child, .adm-table td:first-child { text-align: left; }
+    .adm-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .adm-table tr:last-child td { border-bottom: 0; }
+    .adm-table tbody tr { cursor: pointer; }
+    .adm-table tbody tr:hover td { background: var(--surface-2); }
+    .adm-table td:first-child { white-space: normal; min-width: 160px; }
+    .adm-table td small { display: block; color: var(--muted); font-size: 12px; }
+    .adm-table .bad { color: var(--err); font-weight: 600; }
+    .adm-table .pct { display: inline-block; min-width: 38px; }
+    .adm-table .mini { display: inline-block; vertical-align: middle; width: 52px; height: 5px; margin-left: 6px; border-radius: 9px; background: var(--surface-2); overflow: hidden; }
+    .adm-table .mini > i { display: block; height: 100%; background: var(--text); }
+    .adm-table .mini.over > i { background: var(--err); }
   </style>
 </head>
 <body>
@@ -833,7 +935,16 @@
     <h1>Звіт по витратах</h1></div>
     <button type="button" class="theme-btn" id="themeBtn"></button></div>
     <div class="who-row"><div class="who" id="who">Завантаження…</div><button type="button" class="logout hidden" id="logout">Вийти</button></div>
+    <button type="button" class="avatar" id="avatar" aria-haspopup="menu" aria-expanded="false" aria-controls="umenu" aria-label="Меню профілю"></button>
+    <div class="umenu hidden" id="umenu" role="menu">
+      <div class="um-who" id="umWho"></div>
+      <button type="button" class="um-item" id="umTheme" role="menuitem"></button>
+      <button type="button" class="um-item danger" id="umLogout" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg>
+        Вийти</button>
+    </div>
   </header>
+  <div class="bstrip hidden" id="bstrip" role="button" tabindex="0" aria-label="До огляду бюджету"><span>Залишок</span><b id="bsSum"></b><span id="bsOf"></span><div class="bs-track" id="bsTrack"><i></i></div></div>
 
   <section class="intro" id="intro" aria-hidden="true">
     <h2>Звіти служінь<br>без паперів</h2>
@@ -877,11 +988,11 @@
   </div>
   </aside>
   <div class="sub-main">
-  <section class="hero hidden" id="hero">
-    <div class="b-label" id="heroLabel">Залишок бюджету</div>
-    <div class="b-sum" id="heroSum"></div>
-    <div class="b-sub" id="heroSub"></div>
-    <div class="pace" id="pace"></div>
+  <section class="hero" id="hero">
+    <div class="b-label" id="heroLabel">Залишок бюджету на рік</div>
+    <div class="b-sum" id="heroSum"><span class="sk big"></span></div>
+    <div class="b-sub" id="heroSub"><span class="sk" style="width:70%"></span></div>
+    <div class="pace" id="pace"><span class="sk" style="height:10px"></span></div>
   </section>
   <div class="hidden" id="attnBox">
     <div class="sec-t"><h2>Потребує уваги</h2></div>
@@ -907,15 +1018,20 @@
     <input type="file" id="bulkFiles" accept="image/*,application/pdf" multiple>
   </div>
   <div class="msg" id="msg"></div>
+  <div class="hidden" id="recentBox">
+    <div class="sec-t"><h2>Останні записи</h2><button type="button" class="more" id="recentAll">Усі →</button></div>
+    <div class="group ops recent" id="recent"></div>
+  </div>
+  <input type="file" id="attachFile" accept="image/*,application/pdf" multiple hidden>
   </div>
   </div>
 
   <div id="viewStats" class="hidden">
-    <div class="kpis" id="kpis"></div>
+    <div class="kpis" id="kpis"><div class="kpi"><span class="sk" style="width:55%"></span><span class="sk" style="height:24px"></span></div><div class="kpi"><span class="sk" style="width:55%"></span><span class="sk" style="height:24px"></span></div><div class="kpi"><span class="sk" style="width:55%"></span><span class="sk" style="height:24px"></span></div><div class="kpi"><span class="sk" style="width:55%"></span><span class="sk" style="height:24px"></span></div></div>
 
     <section class="card">
       <div class="sec-head"><h2>По категоріях</h2><span class="hint">витрачено / бюджет</span></div>
-      <div id="catList"></div>
+      <div id="catList"><span class="sk"></span><span class="sk" style="width:80%"></span><span class="sk" style="width:60%"></span></div>
     </section>
 
     <section class="card">
@@ -940,7 +1056,7 @@
         </div>
       </div>
       <div class="hist-sum" id="histSum"></div>
-      <div class="ops" id="ops"></div>
+      <div class="ops" id="ops"><span class="sk"></span><span class="sk" style="width:85%"></span><span class="sk" style="width:70%"></span></div>
       <button type="button" class="linkbtn hidden" id="histMore">Показати ще</button>
     </section>
   </div>
@@ -964,13 +1080,15 @@
         <div style="display:flex;gap:8px"><input type="search" id="admSearch" placeholder="Пошук: служіння або відповідальний" style="flex:1">
           <button type="button" class="refresh" id="admListCsv" title="Зведення по всіх служіннях для Excel">CSV</button></div>
         <div class="ministries" id="admFilters"></div>
+        <div class="adm-view" id="admView" role="tablist" aria-label="Вигляд"><button type="button" data-v="cards" class="on">Картки</button><button type="button" data-v="table">Таблиця</button></div>
       </div>
       <div id="admMinistries"></div>
     </div>
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver">версія 30.10.2026 · 8</div>
+<div class="ver" id="ver">версія 11.11.2026 · 17:06</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 
 <nav class="tabbar" aria-label="Розділи">
@@ -1296,6 +1414,7 @@
     } catch (e) {}
     saveAuth(null);
     try { localStorage.removeItem('ministry'); } catch (e) {}
+    try { Object.keys(localStorage).filter(k => k.startsWith('cache:')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
     try { google.accounts.id.disableAutoSelect(); } catch (e) {}
     location.reload();
   };
@@ -1357,10 +1476,13 @@
         // Лише адмін, без власного служіння: показуємо тільки адмінку.
         document.querySelectorAll('.tabbar [data-tab="submit"], .tabbar [data-tab="stats"]').forEach(b => b.classList.add('hidden'));
         $('who').textContent = `${data.email} · адмін`;
+        $('hero').classList.add('hidden');
+        setAvatar();
         setTab('admin');
         return;
       }
       $('who').textContent = `${data.ministries[0].name} · ${data.email}`;
+      setAvatar();
       showCurrentMinistry();
       addCard();
       loadCategories();
@@ -1393,8 +1515,36 @@
     $('who').textContent = `${currentMinistryName()} · ${ME}`;
     $('who').classList.add('mc');
     $('who').style.setProperty('--mc', ministryColor($('ministry').value));
+    setAvatar();
     updateSubmit();
   }
+
+  // ---------- шапка на телефоні: ініціали й меню (служіння, пошта, тема, вихід) ----------
+  const initials = email => {
+    const n = String(email || '').split('@')[0].split(/[._\-0-9]+/).filter(Boolean);
+    return ((n[0] || '?')[0] + (n[1] ? n[1][0] : '')).toUpperCase();
+  };
+  function setAvatar() {
+    const av = $('avatar');
+    av.textContent = initials(ME);
+    const multi = ministryList.length > 1;
+    av.classList.toggle('mc', multi);
+    if (multi) av.style.setProperty('--mc', ministryColor($('ministry').value));
+    $('umWho').innerHTML = `<b>${esc(currentMinistryName() || (ministryList[0] || {}).name || 'Адміністратор')}</b>${esc(ME)}`;
+  }
+  function syncUmTheme() { const m = themeMode(); $('umTheme').innerHTML = THEME_ICONS[m] + esc(THEME_LABEL[m]); }
+  function toggleMenu(on) {
+    const m = $('umenu');
+    on = on === undefined ? m.classList.contains('hidden') : on;
+    m.classList.toggle('hidden', !on);
+    $('avatar').setAttribute('aria-expanded', String(on));
+    if (on) { syncUmTheme(); $('umTheme').focus(); }
+  }
+  $('avatar').onclick = ev => { ev.stopPropagation(); toggleMenu(); };
+  document.addEventListener('click', ev => { if (!$('umenu').classList.contains('hidden') && !$('umenu').contains(ev.target)) toggleMenu(false); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('umenu').classList.contains('hidden')) { toggleMenu(false); $('avatar').focus(); } });
+  $('umTheme').onclick = () => { document.getElementById('themeBtn').click(); syncUmTheme(); };
+  $('umLogout').onclick = () => document.getElementById('logout').click();
 
   function renderMinistryPills(list) {
     ministryList = list;
@@ -1426,16 +1576,28 @@
     });
   }
 
+  // Останні дані служіння лежать на цьому пристрої: сторінка показує їх одразу, а свіжі підтягує у фоні.
+  // При «Вийти» кеш стирається.
+  const cacheKey = () => `cache:${ME}:${$('ministry').value}`;
+  function readCache() {
+    try { const c = JSON.parse(localStorage.getItem(cacheKey()) || 'null'); return c && Date.now() - c.at < 14 * 864e5 ? c.data : null; } catch (e) { return null; }
+  }
+  function writeCache(data) {
+    try { localStorage.setItem(cacheKey(), JSON.stringify({ at: Date.now(), data })); } catch (e) {}
+  }
   function loadCategories() {
     $('submitAll').disabled = true;
+    const cached = readCache();
+    if (cached) applyInfo(cached, true);
     api.run
-      .withSuccessHandler(applyInfo)
+      .withSuccessHandler(d => applyInfo(d))
       .withFailureHandler(e => showMsg($('msg'), 'err', errText(e)))
       .getCategories($('ministry').value);
   }
 
   /** Категорії, баланс і аналітика — з getCategories або одразу з результату запису. */
-  function applyInfo(data) {
+  function applyInfo(data, fromCache) {
+        if (!fromCache && ME) writeCache(data);
         categories = data.categories;
         cards.forEach(fillCategories);
         if (data.balance) {
@@ -1583,10 +1745,18 @@
           <div class="pace-mark" style="left:${(share * 100).toFixed(1)}%"><span>сьогодні</span></div></div>
         <div class="pace-leg"><span>витрачено ${uah(spent)}</span><span>рік пройдено на ${Math.round(share * 100)}%</span></div>`;
       $('hero').classList.remove('hidden');
+      $('bsSum').textContent = uah(left);
+      $('bsSum').classList.toggle('neg', left < 0);
+      $('bsOf').textContent = `з ${uah(plan)}`;
+      $('bsTrack').classList.toggle('over', left < 0);
+      $('bsTrack').firstElementChild.style.width = Math.min(100, used * 100).toFixed(1) + '%';
     }
+    $('bstrip').classList.toggle('hidden', !plan);
+    renderRecent();
 
     const ops = hist.ops || [];
-    const noRc = ops.filter(o => o.expense > 0 && !o.receipt);
+    const noRc = ops.filter(o => o.expense > 0 && !o.receipt && !o.needsReceipt);
+    const needRc = ops.filter(o => o.needsReceipt);
     const waiting = ops.filter(o => o.status === 'submitted');
     const over = cats.filter(c => c.spent > c.plan);
     const ICO = {
@@ -1599,6 +1769,7 @@
     const item = (kind, cls, title, sub, go) => `<button type="button" class="todo" data-go="${go}"><span class="ic ${cls}">${ICO[kind]}</span>
       <span class="todo-m"><b>${title}</b><span>${sub}</span></span>${chev}</button>`;
     const rows = [];
+    if (needRc.length) rows.push(item('bad', 'warn', `Потрібно звірити чек: ${needRc.length}`, 'додайте фото · ' + esc([needRc[0].description || needRc[0].category.replace(/^\d+\s*/, ''), uah(needRc[0].expense)].filter(Boolean).join(' · ')) + (needRc.length > 1 ? ` і ще ${needRc.length - 1}` : ''), 'needReceipt'));
     if (noRc.length) rows.push(item('bad', 'bad', `Без чека: ${noRc.length}`, esc([noRc[0].description || noRc[0].category.replace(/^\d+\s*/, ''), uah(noRc[0].expense)].filter(Boolean).join(' · ')) + (noRc.length > 1 ? ` і ще ${noRc.length - 1}` : ''), 'noReceipt'));
     if (over.length) rows.push(item('over', 'warn', `Перевищено бюджет: ${over.length} ${over.length === 1 ? 'категорія' : 'категорії'}`, esc(over.map(c => c.name.replace(/^\d+\s*/, '').trim()).slice(0, 2).join(', ')), 'over'));
     if (waiting.length) rows.push(item('wait', 'info', `На перевірці: ${waiting.length}`, `на суму ${uah(waiting.reduce((a, o) => a + o.expense + o.income, 0))}`, 'submitted'));
@@ -1606,11 +1777,76 @@
     $('attn').innerHTML = rows.join('');
     $('attnBox').classList.toggle('hidden', !rows.length);
   }
+  // Під формою — 5 останніх записів служіння: що вже в звіті, статус і чи є чек.
+  function renderRecent() {
+    const list = (hist.ops || []).slice(0, 5);
+    $('recentBox').classList.toggle('hidden', !list.length);
+    $('recent').innerHTML = list.map(o => {
+      const inc = isAdv(o);
+      const title = inc ? (o.description || 'Аванс') : (o.description || o.category || 'Витрата');
+      const who = o.by && o.by !== ME ? ' · ' + esc(o.by.split('@')[0]) : '';
+      const tag = o.needsReceipt
+        ? `<button type="button" class="rc-add" data-act="photo" data-id="${esc(o.id)}">+ фото чека</button>`
+        : `<span class="st ${o.status}">${ST[o.status]}</span>`;
+      const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>`
+        : (o.expense > 0 && !o.needsReceipt ? '<span class="st nr">без чека</span>' : '');
+      return `<div class="op">${opIcon(o)}<div class="op-main"><div class="op-title">${esc(title)}</div>
+        <div class="op-sub">${esc(dayLabel(o.date))}${who}</div><div>${tag}</div></div>
+        <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
+    }).join('');
+  }
+  $('recent').onclick = ev => {
+    const b = ev.target.closest('button[data-act="photo"]'); if (!b) return;
+    const o = hist.ops.find(x => x.id === b.dataset.id); if (o) startAttach(o, b);
+  };
+  $('recentAll').onclick = () => {
+    Object.assign(hist, { q: '', month: '', status: '', cat: '', noReceipt: false, limit: 50 });
+    $('histStatus').value = ''; $('histQ').value = ''; $('histMonth').value = ''; $('histCat').value = '';
+    setTab('stats'); renderHistory();
+    setTimeout(() => $('ops').scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
+
+  // Стрічка залишку вгорі — коли великий блок залишку вже прокручено.
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => $('bstrip').classList.toggle('show', !e.isIntersecting && e.boundingClientRect.top < 0)).observe($('hero'));
+  }
+  $('bstrip').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('bstrip').onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); } };
+
+  // ---------- фото чека до вже поданої витрати («Потрібно звірити чек») ----------
+  let attachOp = null, attachBtn = null;
+  function startAttach(o, b) { attachOp = o; attachBtn = b; $('attachFile').click(); }
+  $('attachFile').onchange = async ev => {
+    const files = [...ev.target.files].filter(isReceiptFile); ev.target.value = '';
+    const o = attachOp, b = attachBtn; attachOp = attachBtn = null;
+    if (!o || !files.length) return;
+    const label = b ? b.textContent : '';
+    const set = t => { if (b) { b.disabled = true; b.textContent = t; } };
+    try {
+      set('Обробка…');
+      const xs = [];
+      for (const f of files.slice(0, 10)) xs.push(isImage(f) ? await compressImage(f) : await readRaw(f));
+      const ministry = $('ministry').value;
+      const sess = await callApi('startPreUploads', [ministry, xs.map(f => ({ name: f.name, mimeType: f.mimeType, size: fileSize(f) }))]);
+      const prog = xs.map(() => 0);
+      const urls = await Promise.all(xs.map((f, i) => putFile(sess[i].url, f, pr => {
+        prog[i] = pr; set(`Завантажую ${Math.round(prog.reduce((a, x) => a + x, 0) / xs.length * 100)}%`);
+      })));
+      set('Зберігаю…');
+      await call('attachReceipts', ministry, o.id, urls);
+      toast('Чек додано до витрати');
+      refreshInfo();
+    } catch (e) {
+      if (b) { b.disabled = false; b.textContent = label; }
+      toast(esc(errText(e)), { err: true });
+    }
+  };
+
   $('attn').onclick = ev => {
     const b = ev.target.closest('[data-go]'); if (!b) return;
     const go = b.dataset.go;
     hist.status = go === 'submitted' ? 'submitted' : ''; hist.q = ''; hist.month = ''; hist.cat = ''; hist.limit = 50;
-    hist.noReceipt = go === 'noReceipt';
+    hist.noReceipt = go === 'noReceipt' ? 'none' : go === 'needReceipt' ? 'need' : false;
     $('histStatus').value = hist.status; $('histQ').value = ''; $('histMonth').value = ''; $('histCat').value = '';
     setTab('stats'); renderHistory();
     const target = go === 'over' ? $('catList') : $('ops');
@@ -1641,7 +1877,7 @@
       && (!hist.status || (hist.status === 'over' ? o.over : o.status === hist.status))
       && (!hist.cat || o.category === hist.cat)
       && (!hist.q || [o.description, o.vendor, o.category, o.noReceiptReason].join(' ').toLowerCase().includes(hist.q))
-      && (!hist.noReceipt || (o.expense > 0 && !o.receipt)));
+      && (!hist.noReceipt || (hist.noReceipt === 'need' ? o.needsReceipt : (o.expense > 0 && !o.receipt && !o.needsReceipt))));
   }
 
   function renderHistory() {
@@ -1659,10 +1895,14 @@
       const title = inc ? (o.description || 'Аванс') : (o.description || o.category || 'Витрата');
       const sub = [inc ? 'аванс' : o.category.replace(/^\d+\s*/, ''), o.vendor].filter(Boolean).map(esc).join(' · ');
       const link = safeUrl(o.receipt) ? `<a class="op-link" href="${esc(safeUrl(o.receipt))}" target="_blank" rel="noopener">чек ↗</a>`
-        : (o.expense > 0 ? '<span class="st nr">без чека</span>' : '');
+        : o.needsReceipt ? '<span class="st need">звірити чек</span>' : (o.expense > 0 ? '<span class="st nr">без чека</span>' : '');
       const st = `<span class="st ${o.status}">${ST[o.status]}</span>${o.over ? '<span class="st over">перевищення</span>' : ''}`;
-      const acts = o.deletable ? `<div class="op-actions">${o.editable ? `<button type="button" class="chk" data-act="edit" data-id="${esc(o.id)}">Змінити</button>` : ''}
-        <button type="button" class="chk del" data-act="cancel" data-id="${esc(o.id)}">Видалити</button></div>` : '';
+      const btns = [
+        o.needsReceipt ? `<button type="button" class="chk on" data-act="photo" data-id="${esc(o.id)}">Додати фото чека</button>` : '',
+        o.deletable && o.editable ? `<button type="button" class="chk" data-act="edit" data-id="${esc(o.id)}">Змінити</button>` : '',
+        o.deletable ? `<button type="button" class="chk del" data-act="cancel" data-id="${esc(o.id)}">Видалити</button>` : '',
+      ].join('');
+      const acts = btns ? `<div class="op-actions">${btns}</div>` : '';
       return head + `<div class="op" data-id="${esc(o.id)}" style="--i:${Math.min(oi, 10)}">${opIcon(o)}
         <div class="op-main"><div class="op-title">${esc(title)}</div><div class="op-sub">${sub}</div><div>${st}</div>${acts}</div>
         <div class="op-right"><div class="op-amt${inc ? ' inc' : ''}">${inc ? '+' : '−'}${uah(inc ? o.income : o.expense)}</div>${link}</div></div>`;
@@ -1680,6 +1920,7 @@
     const b = ev.target.closest('button[data-act]'); if (!b) return;
     const o = hist.ops.find(x => x.id === b.dataset.id); if (!o) return;
     if (b.dataset.act === 'edit') openEdit(o, b.closest('.op'));
+    else if (b.dataset.act === 'photo') startAttach(o, b);
     else cancelOp(o, b);
   };
 
@@ -1688,7 +1929,7 @@
     if (!confirm(`Видалити запис: ${what}?\n\nРядок буде видалено зі звіту, а фото чека — переміщено до кошика Google Диска.`)) return;
     b.disabled = true; b.textContent = 'Видаляю…';
     call('cancelOperation', $('ministry').value, o.id)
-      .then(() => { showMsg($('msg'), 'ok', `Запис видалено: ${esc(what)}.`); refreshInfo(); })
+      .then(() => { toast('Запис видалено'); refreshInfo(); })
       .catch(e => { b.disabled = false; b.textContent = 'Видалити'; alert(errText(e)); });
   }
 
@@ -1725,7 +1966,7 @@
       if (!q('.eOver').classList.contains('hidden')) ch.overReason = q('.eOverReason').value;
       const b = q('.eSave'); b.disabled = true; b.textContent = 'Зберігаю…';
       call('editOperation', $('ministry').value, o.id, ch).then(() => {
-        showMsg($('msg'), 'ok', 'Зміни збережено у звіті.'); refreshInfo();
+        toast('Зміни збережено у звіті'); refreshInfo();
       }).catch(e => {
         b.disabled = false; b.textContent = 'Зберегти';
         if (/перевищ/i.test(errText(e))) q('.eOver').classList.remove('hidden');
@@ -1950,7 +2191,8 @@
 
 
   // ---------- адмінка: усі служіння ----------
-  const adm = { list: [], sum: {}, filter: 'all', q: '', started: false, detail: null, opsFilter: 'all' };
+  const adm = { list: [], sum: {}, filter: 'all', q: '', started: false, detail: null, opsFilter: 'all', view: 'cards', sort: { k: 'name', dir: 1 } };
+  try { if (localStorage.getItem('admView') === 'table') adm.view = 'table'; } catch (e) {}
   // ---------- адмінка → «Статистика» ----------
   const FN_LABEL = {
     getInitData: 'Відкриття сторінки', getCategories: 'Завантаження бюджету', submitExpenses: 'Подання витрат',
@@ -2073,6 +2315,14 @@
           ok ? 'звіт є' : s.status === 'no-report' ? 'звіт не створено' : s.status === 'no-access' ? 'немає доступу' : s.status ? 'помилка' : 'не завантажено'];
       }));
     $('admSearch').oninput = () => { adm.q = $('admSearch').value.trim().toLowerCase(); renderAdmList(); };
+    const syncView = () => $('admView').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === adm.view));
+    syncView();
+    $('admView').onclick = ev => {
+      const b = ev.target.closest('button[data-v]'); if (!b || b.dataset.v === adm.view) return;
+      adm.view = b.dataset.v; syncView();
+      try { localStorage.setItem('admView', adm.view); } catch (e) {}
+      renderAdmList();
+    };
     $('admMinistries').innerHTML = '<div class="empty">Завантаження служінь…</div>';
     wireInviteAll();
     call('adminListMinistries').then(list => {
@@ -2164,6 +2414,7 @@
     updateReportsBar(loaded.length === adm.list.length);
 
     const rows = adm.list.filter(admMatches);
+    if (adm.view === 'table') { renderAdmTable(rows); return; }
     $('admMinistries').innerHTML = rows.length ? rows.map(m => {
       const s = adm.sum[m.id];
       let body;
@@ -2189,6 +2440,52 @@
     $('admMinistries').querySelectorAll('.adm-row').forEach(el => el.onclick = ev => {
       const b = ev.target.closest('[data-of]'); // бейдж — одразу до потрібних операцій служіння
       openAdmDetail(el.dataset.id, b ? b.dataset.of : 'all');
+    });
+  }
+
+  // Таблиця служінь: усе в одному погляді, сортування за будь-якою колонкою.
+  const ADM_COLS = [['name', 'Служіння'], ['plan', 'Бюджет'], ['spent', 'Витрачено'], ['pct', '%'], ['left', 'Залишок'],
+    ['noReceipt', 'Без чека'], ['unchecked', 'Неперевірені'], ['unreimbursed', 'Не відшкод.'], ['count', 'Операцій']];
+  function admVal(m, k) {
+    const s = adm.sum[m.id], ok = s && s.status === 'ok';
+    if (k === 'name') return m.name;
+    if (!ok) return null;
+    if (k === 'pct') return s.plan ? s.spent / s.plan : null;
+    if (k === 'left') return s.plan - s.spent;
+    return s[k] || 0;
+  }
+  function renderAdmTable(rows) {
+    const { k, dir } = adm.sort;
+    const sorted = rows.slice().sort((a, b) => {
+      const x = admVal(a, k), y = admVal(b, k);
+      if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1; // без даних — завжди внизу
+      return (typeof x === 'string' ? x.localeCompare(y, 'uk') : x - y) * dir;
+    });
+    const stTxt = s => !s ? 'завантаження…' : s.status === 'no-report' ? 'звіт не створено' : s.status === 'no-access' ? 'немає доступу' : s.status === 'error' ? 'помилка' : '';
+    const head = ADM_COLS.map(([key, t]) => `<th class="${key === k ? 'on' : ''}" aria-sort="${key === k ? (dir > 0 ? 'ascending' : 'descending') : 'none'}">
+      <button type="button" data-k="${key}">${t}${key === k ? (dir > 0 ? ' ↑' : ' ↓') : ''}</button></th>`).join('');
+    const body = sorted.map(m => {
+      const s = adm.sum[m.id], ok = s && s.status === 'ok', v = key => admVal(m, key);
+      const n = (key, bad) => { const x = v(key); return x === null ? '—' : x ? `<span class="${bad ? 'bad' : ''}">${x}</span>` : '0'; };
+      const pct = v('pct');
+      return `<tr data-id="${esc(m.id)}" tabindex="0">
+        <td>${esc(m.name)}<small>${esc(ok ? (m.responsible || '') : stTxt(s))}</small></td>
+        <td>${ok ? uah(s.plan) : '—'}</td><td>${ok ? uah(s.spent) : '—'}</td>
+        <td>${pct === null ? '—' : `<span class="pct">${Math.round(pct * 100)}%</span><span class="mini${pct > 1 ? ' over' : ''}"><i style="width:${Math.min(100, pct * 100).toFixed(0)}%"></i></span>`}</td>
+        <td${ok && v('left') < 0 ? ' class="bad"' : ''}>${ok ? uah(v('left')) : '—'}</td>
+        <td>${n('noReceipt', true)}</td><td>${n('unchecked')}</td><td>${n('unreimbursed')}</td><td>${n('count')}</td></tr>`;
+    }).join('');
+    $('admMinistries').innerHTML = rows.length
+      ? `<div class="adm-tablewrap"><table class="adm-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`
+      : '<div class="empty">Нічого не знайдено</div>';
+    $('admMinistries').querySelectorAll('th button').forEach(b => b.onclick = () => {
+      const key = b.dataset.k;
+      adm.sort = { k: key, dir: adm.sort.k === key ? -adm.sort.dir : (key === 'name' ? 1 : -1) }; // числа — спершу найбільші
+      renderAdmList();
+    });
+    $('admMinistries').querySelectorAll('tbody tr').forEach(tr => {
+      tr.onclick = () => openAdmDetail(tr.dataset.id, 'all');
+      tr.onkeydown = ev => { if (ev.key === 'Enter') openAdmDetail(tr.dataset.id, 'all'); };
     });
   }
 
@@ -2374,6 +2671,10 @@
     el.querySelector('.addSplit').onclick = () => { addSplit(card); saveDraftSoon(); };
     const onEdit = ev => {
       const t = ev.target;
+      clearFieldErr(t);
+      if (t.matches('.date')) clearFieldErr(el.querySelector('.dateText'));
+      if (t.matches('.splitAmt')) clearFieldErr(el.querySelector('.splitSum'));
+      if (t.matches('.noReceipt')) { clearFieldErr(el.querySelector('.add-photo')); clearFieldErr(el.querySelector('.reason')); }
       if (t.matches('.amount, .dateText, .date, .currency')) updateRate(card);
       if (t.matches('.amount, .splitAmt')) updateSplitSum(card);
       checkOver(); saveDraftSoon();
@@ -2657,7 +2958,11 @@
     draftReady = true;
     if (!d || !d.cards || !d.cards.length || d.ministryId !== $('ministry').value || cards.some(c => !isEmpty(c))) return;
     cards.splice(0).forEach(c => c.el.remove());
-    d.cards.forEach(s => {
+    restoreCards(d.cards);
+    showMsg($('msg'), 'ok', `Відновлено незавершені картки: ${d.cards.length}. Перевірте їх і натисніть «Надіслати».`);
+  }
+  function restoreCards(list) {
+    list.forEach(s => {
       const c = addCard(null, s.advance, s.opId);
       const q = sel => c.el.querySelector(sel);
       setupDate(c.el, parseUa(s.date) || '');
@@ -2678,7 +2983,6 @@
       renderPhotos(c); showLeft(c); updateRate(c); updateSplitSum(c);
     });
     renumber(); checkOver();
-    showMsg($('msg'), 'ok', `Відновлено незавершені картки: ${d.cards.length}. Перевірте їх і натисніть «Надіслати».`);
   }
 
   // ---------- photos ----------
@@ -2730,7 +3034,10 @@
     const start = callApi('startPreUploads', [ministry, files.map(f => ({ name: f.name, mimeType: f.mimeType, size: fileSize(f) }))]);
     files.forEach((f, i) => {
       const st = { ministry };
-      st.promise = start.then(r => putFile(r[i].url, f))
+      st.promise = start.then(r => putFile(r[i].url, f, pr => {
+        st.p = pr;
+        if (st.el) { st.el.classList.add('prog'); st.el.style.setProperty('--p', pr.toFixed(3)); }
+      }))
         .then(url => { st.url = url; return url; })
         .catch(e => { console.warn('Фото не завантажилось наперед:', e); st.failed = true; return null; })
         .finally(() => { if (cards.includes(card)) renderPhotos(card); });
@@ -2774,13 +3081,16 @@
       const st = preUp.get(f);
       if (st && !st.failed) {
         const b = document.createElement('span');
-        b.className = 'upst' + (st.url ? ' ok' : '');
+        b.className = 'upst' + (st.url ? ' ok' : st.p ? ' prog' : '');
+        if (!st.url && st.p) b.style.setProperty('--p', st.p.toFixed(3));
         b.title = st.url ? 'Фото вже на Диску' : 'Фото завантажується…';
+        st.el = b;
         t.appendChild(b);
       }
       box.insertBefore(t, add);
     });
     add.querySelector('.addText').textContent = card.files.length ? 'Ще фото' : 'Фото чека';
+    if (card.files.length) clearFieldErr(add);
   }
 
   function readRaw(f) {
@@ -2817,6 +3127,48 @@
       img.onerror = () => { URL.revokeObjectURL(url); readRaw(f).then(res); }; // не відкрилось — шлемо як є
       img.src = url;
     });
+  }
+
+  // ---------- помилки біля полів ----------
+  // Текст помилки (з перевірки на сторінці чи з сервера) → поле картки, до якого вона стосується.
+  const FIELD_OF = [[/перевищ/i, '.overReason'], [/частин/i, '.splitSum'], [/дат/i, '.dateText'], [/сум/i, '.amount'],
+    [/категор/i, '.category'], [/опиш|що це/i, '.description'], [/постачальник/i, '.vendor'],
+    [/чека немає|поясніть чому/i, '.reason'], [/фото|чек/i, '.add-photo']];
+  const errAnchor = f => f.closest('.datebox, .amt, .photos') || f;
+  function clearFieldErr(f) {
+    if (!f || !f.classList.contains('invalid')) return;
+    f.classList.remove('invalid');
+    const a = errAnchor(f), n = a.nextElementSibling;
+    if (n && n.classList.contains('ferr')) n.remove();
+  }
+  function clearFieldErrs(card) { card.el.querySelectorAll('.invalid').forEach(clearFieldErr); }
+  function fieldErr(card, sel, text) {
+    const f = card.el.querySelector(sel);
+    if (!f || f.closest('.hidden') || f.classList.contains('invalid')) return !!f && f.classList.contains('invalid');
+    f.classList.add('invalid');
+    const m = document.createElement('div'); m.className = 'ferr'; m.textContent = text;
+    errAnchor(f).after(m);
+    return true;
+  }
+  function showCardErr(card, text) {
+    const hit = FIELD_OF.find(([re]) => re.test(text));
+    if (!(hit && fieldErr(card, hit[1], text))) showMsg(card.el.querySelector('.cardMsg'), 'err', text);
+  }
+  /** Перевірка на сторінці: усі порожні обовʼязкові поля одразу, ще до відправки. */
+  function precheck(card) {
+    const q = s => card.el.querySelector(s), errs = [];
+    if (!q('.dateText').value.trim()) errs.push(['.dateText', 'Вкажіть дату.']);
+    if (!(amountOf(card) > 0)) errs.push(['.amount', 'Вкажіть суму більше нуля.']);
+    if (!card.advance) {
+      if (!card.split && !q('.category').value) errs.push(['.category', 'Оберіть категорію.']);
+      if (!q('.description').value.trim()) errs.push(['.description', 'Опишіть, що це і для чого.']);
+      if (!q('.vendor').value.trim()) errs.push(['.vendor', 'Вкажіть постачальника.']);
+      if (q('.noReceipt').checked) { if (!q('.reason').value.trim()) errs.push(['.reason', 'Поясніть, чому немає чека.']); }
+      else if (!card.files.length) errs.push(['.add-photo', 'Додайте фото чека або позначте «Чека немає».']);
+      if (card.over && !q('.overReason').value.trim()) errs.push(['.overReason', 'Поясніть, чому перевищено бюджет.']);
+    }
+    errs.forEach(([sel, t]) => fieldErr(card, sel, t));
+    return errs.length;
   }
 
   // ---------- submit ----------
@@ -2870,14 +3222,17 @@
     const queue = [];
     let failed = 0;
     cards.forEach(card => {
-      const m = card.el.querySelector('.cardMsg'); clearMsg(m);
-      try { queue.push({ card, payload: payloadOf(card) }); } catch (e) { failed++; showMsg(m, 'err', errText(e)); }
+      const m = card.el.querySelector('.cardMsg'); clearMsg(m); clearFieldErrs(card);
+      if (precheck(card)) { failed++; return; }
+      try { queue.push({ card, payload: payloadOf(card) }); } catch (e) { failed++; showCardErr(card, errText(e)); }
     });
 
     let ok = 0, last = null;
+    const sent = []; // для «Скасувати»: id записів і копія картки
     const done = (card, r) => {
-      if (r.error) { failed++; showMsg(card.el.querySelector('.cardMsg'), 'err', r.error); return; }
+      if (r.error) { failed++; showCardErr(card, r.error); return; }
       ok++; last = r;
+      sent.push({ ids: r.ids || [r.id], saved: serializeCard(card) });
       cards.splice(cards.indexOf(card), 1);
       card.el.remove();
     };
@@ -2904,7 +3259,7 @@
         res.results.forEach((r, i) => done(queue[i].card, r || { error: 'Не вдалося записати.' }));
       } catch (e) {
         failed += queue.length;
-        queue.forEach(({ card }) => showMsg(card.el.querySelector('.cardMsg'), 'err', errText(e)));
+        queue.forEach(({ card }) => showCardErr(card, errText(e)));
       }
     } else if (queue.length) {
       // Багато фото через сервер: по картці, по 2 паралельно.
@@ -2915,7 +3270,7 @@
         while (next < queue.length) {
           const { card, payload } = queue[next++];
           try { done(card, (await callApi('submitExpenses', [ministryId, [payload]])).results[0]); }
-          catch (e) { failed++; showMsg(card.el.querySelector('.cardMsg'), 'err', errText(e)); }
+          catch (e) { failed++; showCardErr(card, errText(e)); }
           sentCount++; label();
         }
       };
@@ -2925,13 +3280,14 @@
     busy = false;
     if (failed) {
       showMsg($('msg'), 'err', `Записано: ${ok}. Не вдалося: ${failed} — виправте позначені картки й натисніть «Надіслати» ще раз.`);
-      if (cards[0]) cards[0].el.scrollIntoView({ behavior: 'smooth' });
+      const bad = document.querySelector('#cards .invalid') || (cards[0] && cards[0].el);
+      if (bad) bad.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (last) {
       const urls = (last.receiptUrls || []).map(safeUrl).filter(Boolean);
       const links = urls.map((u, j) => `<a href="${esc(u)}" target="_blank" rel="noopener">чек${urls.length > 1 ? ' ' + (j + 1) : ''}</a>`).join(', ');
-      showMsg($('msg'), 'ok', ok > 1
-        ? `✅ Записано ${ok} у звіт.`
-        : `✅ ${last.advance ? 'Аванс записано' : 'Записано'}: «${esc(last.month)}»${last.row ? `, рядок ${esc(last.row)}` : ''}${links ? ' · ' + links : ''}`);
+      toast(ok > 1 ? `Записано ${ok} у звіт`
+        : `${last.advance ? 'Аванс записано' : 'Записано'} · ${esc(last.month)}${links ? ' · ' + links : ''}`,
+        { undo: () => undoSubmit(sent, ministryId) });
       addCard();
     }
     renumber();
@@ -2964,6 +3320,38 @@
       urls[job.q.upBase + job.j] = links[k];
     });
     withFiles.forEach(q => { q.payload.files = []; });
+  }
+
+  /** «Скасувати» в повідомленні: видаляє щойно записане й повертає картки на форму. */
+  async function undoSubmit(list, ministryId) {
+    toast('Скасовую…', { ms: 20000 });
+    const back = [];
+    for (const x of list) {
+      try { for (const id of x.ids) await call('cancelOperation', ministryId, id); back.push(x.saved); }
+      catch (e) { toast(esc(errText(e)), { err: true }); }
+    }
+    if (!back.length) return;
+    if ($('ministry').value === ministryId) {
+      if (cards.length === 1 && isEmpty(cards[0])) { cards[0].el.remove(); cards.splice(0); }
+      back.forEach(sv => { sv.opId = newOpId(); (sv.files || []).forEach(f => preUp.delete(f)); }); // нове подання — новий ключ і нові фото
+      restoreCards(back); saveDraft();
+      cards[0].el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    toast(`Скасовано. ${back.length > 1 ? 'Картки повернуто' : 'Картку повернуто'} — можна виправити й надіслати знову.`);
+    refreshInfo();
+  }
+
+  // ---------- повідомлення внизу екрана ----------
+  let toastTimer = 0;
+  function hideToast() { $('toast').classList.remove('show'); }
+  function toast(html, opt = {}) {
+    const t = $('toast');
+    clearTimeout(toastTimer);
+    t.innerHTML = `<span>${html}</span>` + (opt.undo ? '<button type="button" class="t-undo">Скасувати</button>' : '');
+    t.classList.toggle('err', !!opt.err);
+    if (opt.undo) t.querySelector('.t-undo').onclick = () => { hideToast(); opt.undo(); };
+    t.classList.add('show');
+    toastTimer = setTimeout(hideToast, opt.ms || (opt.undo ? 7000 : opt.err ? 6000 : 3500));
   }
 
   function refreshInfo() {

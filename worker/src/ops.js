@@ -233,13 +233,41 @@ async function writeOp(ctx, ministry, item, cats, key) {
         parts.length > 1 ? `Частина ${k + 1} з ${parts.length} одного чека на ${item.amount} грн` : '', email, now));
       ids.forEach((fid, pos) => st.push(env.DB.prepare('INSERT INTO op_receipts (op_id, file_id, pos) VALUES (?, ?, ?)').bind(opIds[k], fid, pos)));
     });
-    result = { month, row: 0, rows: [], receiptUrls: ids.map(receiptUrl), id: base };
+    result = { month, row: 0, rows: [], receiptUrls: ids.map(receiptUrl), id: base, ids: opIds };
     opIds.forEach(id => st.push(enqueue(env, ministry.id, 'upsert_op', { id })));
   }
   if (item.type === 'advance') st.push(enqueue(env, ministry.id, 'upsert_op', { id: base }));
   if (key) st.push(env.DB.prepare('INSERT OR REPLACE INTO op_keys (key, result, created_at) VALUES (?, ?, ?)').bind(key, JSON.stringify(result), now));
   await env.DB.batch(st);
   return result;
+}
+
+/**
+ * Фото чека до наявної витрати, у якої чек позначено, але файлу немає (перенесені зі старої таблиці, «Потрібно звірити чек»).
+ * Будь-хто зі служіння; фото — лише свої, завантажені наперед. Позначка «Потрібно звірити чек» з примітки знімається.
+ */
+export async function attachReceipts(ctx, ministryId, id, receiptUrls) {
+  const { env, email } = ctx;
+  const ministry = await requireMinistry(env, email, ministryId);
+  const o = await loadOp(env, ministry, id);
+  if (o.type !== 'expense') throw new UserError('Фото чека можна додати лише до витрати.');
+  if ((await env.DB.prepare('SELECT 1 FROM op_receipts WHERE op_id = ? LIMIT 1').bind(o.id).first())) {
+    throw new UserError('У цієї витрати вже є фото чека. Оновіть сторінку.');
+  }
+  const urls = Array.isArray(receiptUrls) ? receiptUrls : [];
+  if (!urls.length) throw new UserError('Додайте фото чека.');
+  if (urls.length > LIMITS.MAX_FILES_PER_ITEM) throw new UserError(`Не більше ${LIMITS.MAX_FILES_PER_ITEM} фото на одну витрату.`);
+  const ids = await claimUploads(env, urls, ministry, email, o);
+  const note = String(o.note || '').split('\n').filter(l => !/^Потрібно звірити чек/.test(l.trim())).join('\n');
+  await env.DB.batch([
+    ...ids.map((fid, i) => env.DB.prepare('INSERT OR IGNORE INTO op_receipts (op_id, file_id, pos) VALUES (?, ?, ?)').bind(o.id, fid, i)),
+    env.DB.prepare(`UPDATE ops SET has_receipt = 1, receipt_text = CASE WHEN receipt_text IN ('', 'Ні') THEN 'Так' ELSE receipt_text END,
+      no_receipt_reason = '', note = ? WHERE id = ?`).bind(note, o.id),
+    logEntry(env, ministry.id, email, 'Чек додано', `${monthName(o.date)}: ${opSummary(o)}`),
+    enqueue(env, ministry.id, 'upsert_op', { id: o.id }),
+  ]);
+  kick(ctx, ministry.id);
+  return { receiptUrls: ids.map(receiptUrl) };
 }
 
 // ---------------- зміни й видалення ----------------

@@ -28,6 +28,10 @@ policy = '; '.join([
 ])
 tag = '<meta http-equiv="Content-Security-Policy" content="%s">' % policy
 html, n = re.subn(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">', tag, html)
+# Версія внизу сторінки — дата й час останнього оновлення (за Києвом), щоб не правити її вручну.
+import datetime, zoneinfo
+stamp = datetime.datetime.now(zoneinfo.ZoneInfo('Europe/Kyiv')).strftime('%d.%m.%Y · %H:%M')
+html = re.sub(r'<div class="ver" id="ver">[^<]*</div>', '<div class="ver" id="ver">версія %s</div>' % stamp, html)
 if not n:
     html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  ' + tag, 1)
 page.write_text(html, encoding='utf-8')
