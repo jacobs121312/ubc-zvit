@@ -1,0 +1,23 @@
+# Звіт по витратах УБЦ — API. Секрети (ADMINS, SETTINGS_SPREADSHEET_ID, ORDER_CONTACT, GOOGLE_SA_KEY, MAILER_*) задаються `wrangler secret put`,
+# локально — у .dev.vars (не в git: репозиторій публічний).
+name = "ubc-zvit-api"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = false
+
+[vars]
+GOOGLE_CLIENT_ID = "167678046208-et19svi2pje5b4ecc9076shfrkbvqdno.apps.googleusercontent.com"
+ALLOWED_DOMAIN = "ubchurch.lviv.ua"
+ALLOWED_ORIGINS = "https://budget.ubchurch.lviv.ua,https://jacobs121312.github.io"
+FISCAL_YEAR_START = "2026"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "zvit"
+database_id = "32f63079-5a0d-4424-95c5-0215298501a5"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["* * * * *"] # дзеркало в таблиці (повтори) і синхронізація таблиці служінь

@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-18ZBbROXuzxCa1w8JK3W61g4jLbbUynLiLJOnAcBNT0=' 'sha256-2IwynCyuy2U5/yTYERgi8cZaPYLvGxRA9PPZTzVxrUA='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-wdikMgOlxS8HEHIdBWi9xaVnzKyiicz4dLCsSOaNQbA=' 'sha256-d1Smo5VK1bKqSOmhepy++2ba2qVuXd0DexZFd+XjaGE='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -1077,15 +1077,17 @@
 
 <script>
   // ---------- зв'язок із сервером ----------
-  // Основний — Google Apps Script. Новий бекенд (Cloudflare Workers) можна ввімкнути на своєму пристрої для перевірки:
-  // localStorage.apiUrl = 'https://….workers.dev'. Приймаються лише адреси нового API — щоб вхід не пішов кудись іще.
+  // Основний — новий бекенд на Cloudflare Workers (D1 + Google Диск). Старий Google Apps Script лишається для відкату:
+  // на своєму пристрої можна ввімкнути localStorage.apiUrl = '<адреса старого скрипта>' (приймаються лише адреси наших API).
+  const API_NEW = 'https://ubc-zvit-api.savych.workers.dev';
+  const API_OLD = 'https://script.google.com/macros/s/AKfycbyrQTtHmr8VdPm10DtIrtrB0uOy_EtMe5wZz0sdmdy5EKzFMtXBZV47PaNJ7RwmmboyLg/exec';
   const APP = {
     API_URL: (() => {
       try {
         const u = localStorage.getItem('apiUrl') || '';
-        if (/^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev\/?$|^https:\/\/api\.budget\.ubchurch\.lviv\.ua\/?$/.test(u)) return u;
+        if (u === API_OLD || /^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev\/?$|^https:\/\/api\.budget\.ubchurch\.lviv\.ua\/?$/.test(u)) return u;
       } catch (e) {}
-      return 'https://script.google.com/macros/s/AKfycbyrQTtHmr8VdPm10DtIrtrB0uOy_EtMe5wZz0sdmdy5EKzFMtXBZV47PaNJ7RwmmboyLg/exec';
+      return API_NEW;
     })(),
     CLIENT_ID: '167678046208-et19svi2pje5b4ecc9076shfrkbvqdno.apps.googleusercontent.com',
   };
@@ -1131,6 +1133,8 @@
     setSignedIn(true);
     const w = tokenWaiters; tokenWaiters = []; w.forEach(f => f(a));
     if (a.kind === 'google') upgradeToSession(a);
+    // Сесія закінчилась уже після відкриття сторінки — повторюємо початкове завантаження.
+    if (window.reinitAfterLogin) { const f = window.reinitAfterLogin; window.reinitAfterLogin = null; f(); }
   }
 
   function onCredential(resp) {
@@ -1331,6 +1335,7 @@
   }
 
   // ---------- init ----------
+  function loadInit() {
   api.run
     .withSuccessHandler(data => {
       limits = { min: data.minDate, max: data.maxDate };
@@ -1363,6 +1368,7 @@
     })
     .withFailureHandler(e => {
       if (e.auth) { // пошти немає в списку або сесія закінчилась — назад на вхід із поясненням
+        window.reinitAfterLogin = loadInit; // після входу — завантажити дані знову, а не лишатись на порожній формі
         saveAuth(null); setSignedIn(false);
         authMsg('err', errText(e));
         return;
@@ -1370,6 +1376,8 @@
       $('who').textContent = ''; showMsg($('msg'), 'err', errText(e));
     })
     .getInitData();
+  }
+  loadInit();
 
   $('ministry').addEventListener('change', loadCategories);
 

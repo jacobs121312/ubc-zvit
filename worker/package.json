@@ -1,0 +1,17 @@
+{
+  "name": "ubc-zvit-api",
+  "private": true,
+  "type": "module",
+  "description": "Звіт по витратах УБЦ — API на Cloudflare Workers + D1",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "test": "vitest run",
+    "db:local": "wrangler d1 migrations apply zvit --local",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.6.0",
+    "vitest": "~4.1.0",
+    "wrangler": "4.158.0"
+  }
+}
