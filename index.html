@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-UyhIl8Y+jN5NC6V+KdEvExMBdYJjhntjZ7SL7QgjTnE=' 'sha256-IzJpm9TY5c7jJCCLQmdKNQvaYIVijcXaH+a+Ah2CLFU='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-qfQFM3OG0Yx5gffbzz1hiaCsTqitlRr1Bo02bStGEqo=' 'sha256-dK3C4Oo+m9mFpSHgQw1z2mP7ELWx9GTdnH8ijQ12+Qo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -884,7 +884,7 @@
     .um-item.danger { color: var(--err); }
     @media (max-width: 899px) {
       .topbar { position: relative; }
-      body:not(.signed-out) .avatar { display: grid; place-items: center; }
+      body:not(.signed-out) .avatar:not(:empty) { display: grid; place-items: center; }
       body:not(.signed-out) .who-row .who, body:not(.signed-out) .who-row .logout, body:not(.signed-out) #themeBtn { display: none; }
       body:not(.signed-out) .tb-brand { flex: 1; }
       body:not(.signed-out) .topbar { display: flex; align-items: center; gap: 12px; }
@@ -893,6 +893,7 @@
 
     /* Помилки біля полів */
     .card .invalid, .card .add-photo.invalid { border-color: var(--err) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--err) 18%, transparent) !important; }
+    .msg .retry { display: block; width: auto; margin-top: 10px; padding: 8px 14px; font-size: 14px; }
     .ferr { margin: 5px 2px 0; font-size: 13px; color: var(--err); }
 
     /* Адмінка: таблиця служінь */
@@ -1087,7 +1088,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" id="ver">версія 11.11.2026 · 17:06</div>
+<div class="ver" id="ver">версія 13.11.2026 · 21:25</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 
@@ -1273,8 +1274,14 @@
     google.accounts.id.initialize({ client_id: APP.CLIENT_ID, callback: onCredential, auto_select: false, cancel_on_tap_outside: true, login_hint: loginHint || undefined, hd: 'ubchurch.lviv.ua' });
     renderGbtn();
   }
+  // Кнопку Google малюємо один раз за кадр: два виклики поспіль (тема + ініціалізація) давали дві кнопки.
+  let gbtnRaf = 0;
   function renderGbtn() {
     if (!gisReady) return;
+    cancelAnimationFrame(gbtnRaf);
+    gbtnRaf = requestAnimationFrame(drawGbtn);
+  }
+  function drawGbtn() {
     const box = document.getElementById('gbtn');
     box.innerHTML = '';
     google.accounts.id.renderButton(box, {
@@ -1343,7 +1350,18 @@
     return new Promise(res => tokenWaiters.push(res));
   }
 
-  function post(body, onProgress) {
+  // Мобільний інтернет інколи на мить не дотягується до сервера — тоді тихо пробуємо ще двічі.
+  // Повтор безпечний: сервер не запише ту саму картку двічі (ключ картки opId).
+  async function post(body, onProgress) {
+    for (let i = 0; ; i++) {
+      try { return await postOnce(body, onProgress); }
+      catch (e) {
+        if (!e.network || i >= 2) throw e;
+        await new Promise(r => setTimeout(r, 1200 * (i + 1)));
+      }
+    }
+  }
+  function postOnce(body, onProgress) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', APP.API_URL);
@@ -1358,7 +1376,7 @@
         if (!j.ok) { const e = new Error(j.error); e.auth = j.auth; reject(e); return; }
         resolve(j.result);
       };
-      xhr.onerror = () => reject(new Error('Немає звʼязку з сервером. Перевірте інтернет.'));
+      xhr.onerror = () => { const e = new Error('Немає звʼязку з сервером. Перевірте інтернет і спробуйте ще раз.'); e.network = true; reject(e); };
       xhr.send(JSON.stringify(body));
     });
   }
@@ -1495,7 +1513,12 @@
         authMsg('err', errText(e));
         return;
       }
-      $('who').textContent = ''; showMsg($('msg'), 'err', errText(e));
+      $('who').textContent = '';
+      showMsg($('msg'), 'err', errText(e));
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'retry'; b.textContent = 'Спробувати ще раз';
+      b.onclick = () => { clearMsg($('msg')); $('who').textContent = 'Завантаження…'; loadInit(); };
+      $('msg').append(' ', b);
     })
     .getInitData();
   }
