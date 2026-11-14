@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-z5Mjh9V4bSmGsVduR7vx/oYoLfyCB+NKwgpFJ8ciVsE=' 'sha256-dK3C4Oo+m9mFpSHgQw1z2mP7ELWx9GTdnH8ijQ12+Qo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-8RykwZ+CAmx473q3NhixNrPenTz5byC/QENyQ+8jn0I=' 'sha256-dK3C4Oo+m9mFpSHgQw1z2mP7ELWx9GTdnH8ijQ12+Qo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -1088,7 +1088,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" id="ver">версія 14.11.2026 · 11:08</div>
+<div class="ver" id="ver">версія 14.11.2026 · 11:10</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 
@@ -1369,7 +1369,7 @@
         if (!e.network) throw e;
         if (canRelay) {
           try { const r = await viaRelay(body, onProgress); setRelay(true); return r; }
-          catch (e2) { if (!e2.network) throw e2; }
+          catch (e2) { if (!e2.network) { setRelay(true); throw e2; } } // сервер відповів через Google — далі одразу так
         }
         if (i >= 2) throw e;
         await new Promise(r => setTimeout(r, 1200 * (i + 1)));
