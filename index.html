@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-qfQFM3OG0Yx5gffbzz1hiaCsTqitlRr1Bo02bStGEqo=' 'sha256-dK3C4Oo+m9mFpSHgQw1z2mP7ELWx9GTdnH8ijQ12+Qo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client 'sha256-CqxMyqJj7TCc17wZKu/u9jbFYE1wP2UgPfoSpZ6ZrGs=' 'sha256-z5Mjh9V4bSmGsVduR7vx/oYoLfyCB+NKwgpFJ8ciVsE=' 'sha256-dK3C4Oo+m9mFpSHgQw1z2mP7ELWx9GTdnH8ijQ12+Qo='; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.googleapis.com https://accounts.google.com/gsi/ https://*.workers.dev https://api.budget.ubchurch.lviv.ua; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
   <title>Звіт по витратах · УБЦ</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin">
@@ -1088,7 +1088,7 @@
     <div id="admDetail" class="hidden"></div>
   </div>
 </main>
-<div class="ver" id="ver">версія 13.11.2026 · 21:25</div>
+<div class="ver" id="ver">версія 14.11.2026 · 11:08</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 
@@ -1352,19 +1352,34 @@
 
   // Мобільний інтернет інколи на мить не дотягується до сервера — тоді тихо пробуємо ще двічі.
   // Повтор безпечний: сервер не запише ту саму картку двічі (ключ картки opId).
+  // Запасний шлях: деякі телефони й мережі (фільтри вмісту, DNS-блокувальники) не бачать адрес *.workers.dev.
+  // Тоді запит іде через Google Apps Script (script.google.com), який пересилає його на той самий сервер.
+  const RELAY_MS = 6 * 3600e3;
+  const relayOn = () => { try { return Number(localStorage.getItem('relayUntil') || 0) > Date.now(); } catch (e) { return false; } };
+  const setRelay = on => { try { if (on) localStorage.setItem('relayUntil', String(Date.now() + RELAY_MS)); else localStorage.removeItem('relayUntil'); } catch (e) {} };
+  const viaRelay = (body, onProgress) => postOnce({ relay: 1, body }, onProgress, API_OLD);
   async function post(body, onProgress) {
+    const canRelay = APP.API_URL === API_NEW;
+    if (canRelay && relayOn()) {
+      try { return await viaRelay(body, onProgress); } catch (e) { if (!e.network) throw e; setRelay(false); }
+    }
     for (let i = 0; ; i++) {
       try { return await postOnce(body, onProgress); }
       catch (e) {
-        if (!e.network || i >= 2) throw e;
+        if (!e.network) throw e;
+        if (canRelay) {
+          try { const r = await viaRelay(body, onProgress); setRelay(true); return r; }
+          catch (e2) { if (!e2.network) throw e2; }
+        }
+        if (i >= 2) throw e;
         await new Promise(r => setTimeout(r, 1200 * (i + 1)));
       }
     }
   }
-  function postOnce(body, onProgress) {
+  function postOnce(body, onProgress, url) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', APP.API_URL);
+      xhr.open('POST', url || APP.API_URL);
       xhr.timeout = 180000; // повтор безпечний: сервер не запише ту саму картку двічі
       xhr.ontimeout = () => reject(new Error('Сервер довго не відповідає — можливо, слабкий звʼязок. Спробуйте ще раз.'));
       xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8'); // без preflight-запиту
